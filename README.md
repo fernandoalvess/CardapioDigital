@@ -1,2 +1,2 @@
 # CardapioDigital
- Projeto de um Cardápio Digital
+Projeto de um Cardápio Digital
