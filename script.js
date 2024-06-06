@@ -160,7 +160,7 @@ checkoutBtn.addEventListener("click", function(event) {
     //Enviar o pedido
     const cartItems = cart.map ((item) => {
         return (
-            ` ${item.name} Quantidade: (${item.quantity}) Preço: R$${item.price}`
+            `- ${item.name}. Unidades: (${item.quantity}). Preço: R$${item.price.toFixed(2)}\n`
         )
     }).join("")
 
