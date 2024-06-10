@@ -9,6 +9,31 @@ const cartCounter = document.getElementById("cart-count")
 const addressInput = document.getElementById("address")
 const addressWarn = document.getElementById("address-warn")
 
+const navegarItems = document.querySelectorAll('.navegar a[href^="#"]');
+
+function getScrollTopByHref(element) {
+	const id = element.getAttribute('href');
+	return document.querySelector(id).offsetTop;
+}
+
+function scrollToPosition(to) {
+    window.scroll({
+         top: to,
+         behavior: "smooth",
+         })
+  smoothScrollTo(0, to);
+}
+
+function scrollToIdOnClick(event) {
+	event.preventDefault();
+	const to = getScrollTopByHref(event.currentTarget)- 25;
+	scrollToPosition(to);
+}
+
+navegarItems.forEach(item => {
+	item.addEventListener('click', scrollToIdOnClick);
+});
+
 let cart = [];
 
 // Abrir o carrinho
@@ -160,7 +185,7 @@ checkoutBtn.addEventListener("click", function(event) {
     //Enviar o pedido
     const cartItems = cart.map ((item) => {
         return (
-            `- ${item.name}. Unidades: (${item.quantity}). Preço: R$${item.price.toFixed(2)}\n`
+            `- ${item.name}. *Unidades:* (${item.quantity}). *Preço:* R$${item.price.toFixed(2)}\n`
         )
     }).join("")
 
