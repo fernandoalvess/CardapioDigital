@@ -905,6 +905,10 @@ video {
   height: 100%;
 }
 
+.max-h-\[400px\] {
+  max-height: 400px;
+}
+
 .w-28 {
   width: 7rem;
 }
