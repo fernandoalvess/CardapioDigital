@@ -2688,29 +2688,65 @@ body {
 
 nav {
   width: 100%;
-  background-color: rgb(0 0 0 / 0.5);
+  background-color: rgba(0, 0, 0, 0.5);
+  /* Fundo semi-transparente */
   position: fixed;
   top: 0;
   z-index: 100;
+  padding: 5px 0;
+  /* Adiciona espaçamento vertical */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  /* Adiciona uma sombra leve */
 }
 
 nav ul {
-  text-align: center;
   display: flex;
-  justify-content: center;
-  padding: 0px;
+  justify-content: space-evenly;
+  /* Centraliza os itens horizontalmente */
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  /* Remove os marcadores da lista */
 }
 
 nav a {
-  padding: 5px 10px;
+  padding: 10px 20px;
+  /* Espaçamento maior para os links */
   text-decoration: none;
   color: white;
-  font-size: medium;
+  font-size: 1rem;
+  /* Ajusta o tamanho da fonte */
   font-weight: bold;
+  border-radius: 8px;
+  /* Bordas arredondadas */
+  transition: all 0.3s ease;
+  /* Efeito suave ao passar o mouse */
+  margin: 5px;
+  /* Espaçamento entre os links */
 }
 
 nav a:hover {
-  color: rgb(0 0 0);
+  color: black;
+  background-color: rgba(255, 255, 255, 0.8);
+  /* Fundo branco ao passar o mouse */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  /* Adiciona sombra ao hover */
+}
+
+/* Estilo responsivo para telas menores */
+
+@media (max-width: 768px) {
+  nav ul {
+    justify-content: space-evenly;
+    /* Mantém os itens lado a lado */
+  }
+
+  nav a {
+    font-size: 0.9rem;
+    /* Reduz o tamanho da fonte */
+    padding: 8px 12px;
+    /* Ajusta o espaçamento */
+  }
 }
 
 @media (min-width: 640px) {
