@@ -5,18 +5,18 @@ import { CartProvider } from "@/components/store/cart-provider";
 export const metadata: Metadata = {
   metadataBase: new URL("https://fbhamburgueria.vercel.app"),
   title: {
-    default: "FB Hamburgueria",
-    template: "%s | FB Hamburgueria",
+    default: "FB Burguer",
+    template: "%s | FB Burguer",
   },
   description:
-    "Cardápio digital da FB Hamburgueria. Faça seu pedido de forma rápida e simples.",
+    "Cardápio digital da FB Burguer. Faça seu pedido de forma rápida e simples.",
   openGraph: {
     type: "website",
     locale: "pt_BR",
-    siteName: "FB Hamburgueria",
-    title: "FB Hamburgueria",
+    siteName: "FB Burguer",
+    title: "FB Burguer",
     description: "Hambúrgueres, salgados, bebidas e sobremesas.",
-    images: ["/legacy/hamb-1.webp"],
+    images: ["/legacy/logo.webp"],
   },
 };
 

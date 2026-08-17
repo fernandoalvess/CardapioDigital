@@ -52,8 +52,8 @@ export function Storefront({ catalog, open, hoursLabel }: Props) {
         <div className="container-app relative flex min-h-[390px] flex-col justify-end py-10 md:min-h-[440px]">
           <div className="flex items-end gap-5">
             <Image
-              src="/legacy/hamb-1.webp"
-              alt="FB Hamburgueria"
+              src="/legacy/logo.webp"
+              alt="FB Burguer"
               width={112}
               height={112}
               className="h-24 w-24 rounded-3xl border border-white/15 object-cover shadow-2xl md:h-28 md:w-28"
@@ -287,9 +287,7 @@ function CartDrawer({
               />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-bold">{item.name}</p>
-                <p className="text-sm text-zinc-500">
-                  {formatBRL(item.price)}
-                </p>
+                <p className="text-sm text-zinc-500">{formatBRL(item.price)}</p>
                 <div className="mt-2 flex items-center gap-2">
                   <button
                     type="button"
@@ -298,7 +296,9 @@ function CartDrawer({
                   >
                     −
                   </button>
-                  <strong className="min-w-6 text-center">{item.quantity}</strong>
+                  <strong className="min-w-6 text-center">
+                    {item.quantity}
+                  </strong>
                   <button
                     type="button"
                     onClick={() =>
