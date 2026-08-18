@@ -70,7 +70,7 @@ export function Storefront({ catalog, open, hoursLabel }: Props) {
                 {catalog.business.address}
               </p>
               <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-zinc-600">
-                <span className="inline-flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-1.5 ">
                   <ClockIcon /> {hoursLabel}
                 </span>
               </div>

@@ -22,7 +22,7 @@ const orderSchema = z.object({
 });
 
 const paymentLabels: Record<string, string> = {
-  pix: "Pix direto com a loja",
+  pix: "Pix",
   cash: "Dinheiro",
   card_on_delivery: "Cartão na entrega",
 };
@@ -221,7 +221,6 @@ function buildWhatsAppMessage({
     `💳 *Forma informada:* ${paymentLabels[paymentMethod] ?? paymentMethod}`,
     notes ? `📝 *Observação:* ${notes}` : "",
     "",
-    "Esta comanda será confirmada como venda pela administração da FB Burguer.",
   ]
     .filter(Boolean)
     .join("\n");
