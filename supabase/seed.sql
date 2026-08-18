@@ -4,7 +4,7 @@ insert into public.businesses (
   '10000000-0000-4000-8000-000000000001',
   'FB Burguer',
   'fb-burguer',
-  'Rua Fernando, 15, Centro, Ereré-CE',
+  'R. Cap. Teotônio, 1500, Centro',
   '5588998102411',
   'America/Fortaleza',
   true

@@ -7,7 +7,7 @@ export const seedCatalog: Catalog = {
     id: BUSINESS_ID,
     name: "FB Burguer",
     slug: "fb-burguer",
-    address: "Rua Fernando, 15, Centro, Ereré-CE",
+    address: "R. Cap. Teotônio, 1500, Centro",
     whatsapp: "5588998102411",
     timezone: "America/Fortaleza",
   },
