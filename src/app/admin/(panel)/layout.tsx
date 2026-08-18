@@ -17,7 +17,7 @@ export default async function AdminLayout({
       redirect("/admin/login");
     }
 
-    const slug = process.env.NEXT_PUBLIC_BUSINESS_SLUG ?? "fb-hamburgueria";
+    const slug = process.env.NEXT_PUBLIC_BUSINESS_SLUG ?? "fb-burguer";
     const { data: business } = await supabase
       .from("businesses")
       .select("id")

@@ -9,7 +9,7 @@ export default async function AdminCatalogPage() {
     <main>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.2em] text-rose-600">
+          <p className="text-xs font-black uppercase tracking-[0.2em] text-[#ff6500]">
             Gestão
           </p>
           <h1 className="mt-1 text-3xl font-black">Cardápio</h1>
