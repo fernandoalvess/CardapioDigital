@@ -1,80 +1,68 @@
-# FB Hamburgueria V2
+# FB Burguer
 
-Nova base do cardápio digital da FB Hamburgueria, migrada da versão HTML/JavaScript para uma aplicação full-stack.
+Nova versão do cardápio digital da FB Burguer, construída com Next.js, TypeScript, Tailwind CSS e Supabase.
+
+## Conceito da V2
+
+- Marca: **FB Burguer**.
+- Interface limpa e mobile-first, inspirada nos padrões de navegação de apps de delivery, sem copiar identidade visual de terceiros.
+- Sem imagem hero grande: a identidade da loja aparece em um cabeçalho compacto com a nova logo.
+- O site **não processa pagamentos**. A forma de pagamento é apenas uma informação da comanda.
+- Todo pedido encaminhado ao WhatsApp precisa ser salvo primeiro como **comanda aberta**.
+- Uma comanda aberta não entra no faturamento.
+- O administrador pode ajustar cliente, endereço, observações, itens, quantidades, valores, taxa e desconto.
+- Ao clicar em **Fechar comanda e confirmar venda**, a comanda passa a contar como venda no dashboard.
+- Comandas também podem ser canceladas e não entram nas vendas.
 
 ## Stack
 
-- Next.js 16 (App Router)
+- Next.js 16 / App Router
 - React 19
 - TypeScript
 - Tailwind CSS 4
-- Supabase (Postgres, Auth e RLS)
+- Supabase PostgreSQL + Auth + RLS
+- Vercel
 
-## O que já está nesta primeira etapa
+## Variáveis de ambiente
 
-- Cardápio responsivo reconstruído em React.
-- 16 produtos e 4 categorias migrados da V1.
-- Imagens legadas convertidas para WebP e reduzidas.
-- Busca no cardápio.
-- Navegação por categoria.
-- Carrinho persistente em `localStorage`.
-- Contador correto por quantidade de unidades.
-- Checkout inicial.
-- Endpoint `/api/orders` com validação Zod e reprecificação no servidor.
-- Login administrativo preparado com Supabase SSR, Proxy e verificação de membership.
-- Dashboard inicial e tela de cardápio no admin.
-- Schema PostgreSQL multiempresa com RLS.
-- Seed da FB Hamburgueria.
-- Fallback local: o site roda sem Supabase para desenvolvimento visual.
+Copie `.env.example` para `.env.local` e preencha:
 
-## Rodando localmente
+```env
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+SUPABASE_SECRET_KEY=
+NEXT_PUBLIC_BUSINESS_SLUG=fb-burguer
+```
+
+Nunca envie `.env.local` para o GitHub.
+
+## Banco
+
+Execute as migrations em ordem:
+
+1. `supabase/migrations/202608170001_initial_schema.sql`
+2. `supabase/migrations/202608170002_fb_burguer_comandas.sql`
+
+Depois execute `supabase/seed.sql` para inserir a FB Burguer e o cardápio inicial.
+
+## Desenvolvimento
 
 ```bash
 npm install
 npm run dev
 ```
 
-Abra `http://localhost:3000`.
+## Validação antes do push
 
-## Conectando ao Supabase
-
-1. Crie um projeto no Supabase.
-2. Copie `.env.example` para `.env.local`.
-3. Preencha:
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
-   - `SUPABASE_SECRET_KEY`
-4. Execute a migration:
-   - `supabase/migrations/202608170001_initial_schema.sql`
-5. Execute:
-   - `supabase/seed.sql`
-
-Depois crie um usuário no Supabase Auth e associe-o à loja:
-
-```sql
-insert into public.business_members (business_id, user_id, role)
-values (
-  '10000000-0000-4000-8000-000000000001',
-  'UUID_DO_USUARIO_AUTH',
-  'owner'
-);
+```bash
+npm run build
 ```
 
-## Rotas
+## Rotas principais
 
 - `/` — cardápio
-- `/checkout` — checkout
+- `/checkout` — revisão e criação da comanda antes do WhatsApp
 - `/admin/login` — login administrativo
-- `/admin` — dashboard
-- `/admin/cardapio` — visão do cardápio
-
-## Próxima etapa recomendada
-
-Implementar o CRUD real no painel:
-
-- criar/editar/excluir categoria;
-- criar/editar produto;
-- upload de imagem no Supabase Storage;
-- alternar disponibilidade;
-- reordenar itens;
-- validação de permissões por papel.
+- `/admin` — dashboard de vendas confirmadas
+- `/admin/comandas` — comandas abertas, fechadas e canceladas
+- `/admin/cardapio` — gestão do cardápio (base preparada para o CRUD)
