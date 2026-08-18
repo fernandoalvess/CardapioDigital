@@ -37,68 +37,69 @@ export function Storefront({ catalog, open, hoursLabel }: Props) {
   );
 
   return (
-    <main className="min-h-screen pb-28">
-      <section className="relative isolate overflow-hidden bg-zinc-950 text-white">
-        <Image
-          src="/legacy/hero-bg.webp"
-          alt=""
-          fill
-          preload
-          className="object-cover opacity-35"
-          sizes="100vw"
-        />
-        <div className="absolute inset-0 bg-linear-to-t from-zinc-950 via-zinc-950/45 to-zinc-950/30" />
-
-        <div className="container-app relative flex min-h-[390px] flex-col justify-end py-10 md:min-h-[440px]">
-          <div className="flex items-end gap-5">
+    <main className="min-h-screen pb-2">
+      <section className="border-b border-zinc-200 bg-white">
+        <div className="container-app py-7 md:py-9">
+          <div className="flex items-start gap-4 md:gap-6">
             <Image
-              src="/legacy/logo.webp"
-              alt="FB Burguer"
-              width={112}
-              height={112}
-              className="h-24 w-24 rounded-3xl border border-white/15 object-cover shadow-2xl md:h-28 md:w-28"
+              src="/brand/logo.webp"
+              alt="Logo da FB Burguer"
+              width={120}
+              height={120}
+              priority
+              className="h-24 w-24 shrink-0 rounded-2xl border border-zinc-200 object-cover md:h-28 md:w-28"
             />
-            <div className="min-w-0 pb-1">
-              <span
-                className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${
-                  open
-                    ? "bg-emerald-400 text-emerald-950"
-                    : "bg-rose-400 text-rose-950"
-                }`}
-              >
-                {open ? "Aberto agora" : "Fechado agora"}
-              </span>
-              <h1 className="mt-3 text-3xl font-black tracking-tight md:text-5xl">
-                {catalog.business.name}
-              </h1>
-            </div>
-          </div>
 
-          <div className="mt-6 grid gap-2 text-sm text-zinc-200 md:grid-cols-2">
-            <p>📍 {catalog.business.address}</p>
-            <p>🕒 {hoursLabel}</p>
+            <div className="min-w-0 flex-1 pt-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-2xl font-black tracking-tight md:text-3xl">
+                  {catalog.business.name}
+                </h1>
+                <span
+                  className={`rounded-full px-2.5 py-1 text-xs font-extrabold ${
+                    open
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "bg-red-100 text-red-700"
+                  }`}
+                >
+                  {open ? "Aberto" : "Fechado"}
+                </span>
+              </div>
+
+              <p className="mt-2 text-sm text-zinc-600">
+                {catalog.business.address}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-zinc-600">
+                <span className="inline-flex items-center gap-1.5">
+                  <ClockIcon /> {hoursLabel}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <div className="sticky top-0 z-30 border-b border-zinc-200 bg-[#f8f7f4]/95 backdrop-blur">
+      <div className="sticky top-0 z-30 border-b border-zinc-200 bg-white/95 backdrop-blur">
         <div className="container-app py-3">
-          <label className="block">
+          <label className="relative block">
+            <span className="pointer-events-none absolute inset-y-0 left-4 grid place-items-center text-zinc-400">
+              <SearchIcon />
+            </span>
             <span className="sr-only">Buscar no cardápio</span>
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Buscar hambúrguer, bebida, sobremesa..."
-              className="w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-rose-400 focus:ring-4 focus:ring-rose-100"
+              placeholder="Busque por um item do cardápio"
+              className="w-full rounded-xl border border-zinc-200 bg-zinc-50 py-3 pl-11 pr-4 text-sm outline-none transition focus:border-orange-400 focus:bg-white focus:ring-4 focus:ring-orange-100"
             />
           </label>
 
-          <nav className="mt-3 flex gap-2 overflow-x-auto pb-1">
+          <nav className="mt-3 flex gap-1 overflow-x-auto pb-1">
             {catalog.categories.map((category) => (
               <a
                 key={category.id}
                 href={`#${category.slug}`}
-                className="shrink-0 rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm font-bold text-zinc-700 hover:border-zinc-300"
+                className="shrink-0 rounded-full px-4 py-2 text-sm font-bold text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-950"
               >
                 {category.name}
               </a>
@@ -107,38 +108,35 @@ export function Storefront({ catalog, open, hoursLabel }: Props) {
         </div>
       </div>
 
-      <div className="container-app py-8 md:py-12">
+      <div className="container-app py-7 md:py-10">
         {categories.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-zinc-300 bg-white p-10 text-center">
+          <div className="rounded-2xl border border-dashed border-zinc-300 bg-white p-10 text-center">
             <p className="font-bold">Nenhum item encontrado.</p>
             <p className="mt-1 text-sm text-zinc-500">
               Tente buscar por outro nome ou categoria.
             </p>
           </div>
         ) : (
-          <div className="space-y-12">
+          <div className="space-y-9">
             {categories.map((category) => (
               <section
                 id={category.slug}
                 key={category.id}
                 className="scroll-mt-36"
               >
-                <div className="mb-5 flex items-end justify-between gap-4">
+                <div className="mb-4 flex items-end justify-between gap-4">
                   <div>
-                    <p className="text-xs font-black uppercase tracking-[0.2em] text-rose-600">
-                      Cardápio
-                    </p>
-                    <h2 className="mt-1 text-2xl font-black md:text-3xl">
+                    <h2 className="text-xl font-black md:text-2xl">
                       {category.name}
                     </h2>
+                    <p className="mt-1 text-sm text-zinc-500">
+                      {category.products.length}{" "}
+                      {category.products.length === 1 ? "item" : "itens"}
+                    </p>
                   </div>
-                  <span className="text-sm text-zinc-500">
-                    {category.products.length}{" "}
-                    {category.products.length === 1 ? "item" : "itens"}
-                  </span>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-3 md:grid-cols-2">
                   {category.products.map((product) => (
                     <ProductCard
                       key={product.id}
@@ -155,18 +153,17 @@ export function Storefront({ catalog, open, hoursLabel }: Props) {
 
       {cart.itemCount > 0 && (
         <div className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 px-4 pt-3 backdrop-blur">
-          <div className="mx-auto flex max-w-3xl gap-3">
-            <button
-              type="button"
-              onClick={() => setCartOpen(true)}
-              className="flex flex-1 items-center justify-between rounded-2xl bg-zinc-950 px-5 py-4 text-left font-bold text-white shadow-xl"
-            >
-              <span>
-                {cart.itemCount} {cart.itemCount === 1 ? "item" : "itens"}
-              </span>
-              <span>{formatBRL(cart.subtotal)}</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setCartOpen(true)}
+            className="mx-auto flex w-full max-w-2xl items-center justify-between rounded-xl bg-[#ff6500] px-5 py-4 text-left font-black text-white shadow-lg transition hover:bg-[#df5700]"
+          >
+            <span>
+              Ver pedido · {cart.itemCount}{" "}
+              {cart.itemCount === 1 ? "item" : "itens"}
+            </span>
+            <span>{formatBRL(cart.subtotal)}</span>
+          </button>
         </div>
       )}
 
@@ -180,6 +177,8 @@ export function Storefront({ catalog, open, hoursLabel }: Props) {
   );
 }
 
+
+
 function ProductCard({
   product,
   onAdd,
@@ -189,26 +188,16 @@ function ProductCard({
 }) {
   return (
     <article
-      className={`card-shadow overflow-hidden rounded-3xl border border-zinc-100 bg-white ${
-        !product.isAvailable ? "opacity-65" : ""
+      className={`min-h-[150px] rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-300 ${
+        !product.isAvailable ? "opacity-60" : ""
       }`}
     >
-      <div className="flex h-full min-h-44 gap-4 p-3">
-        <div className="relative h-36 w-36 shrink-0 overflow-hidden rounded-2xl bg-zinc-100 sm:h-40 sm:w-40">
-          <Image
-            src={product.imageUrl}
-            alt={product.name}
-            fill
-            className="object-cover"
-            sizes="(max-width: 640px) 144px, 160px"
-          />
-        </div>
-
-        <div className="flex min-w-0 flex-1 flex-col py-1 pr-1">
-          <div className="flex items-start justify-between gap-2">
-            <h3 className="font-black leading-tight">{product.name}</h3>
+      <div className="flex h-full gap-4">
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="font-bold leading-tight">{product.name}</h3>
             {product.isFeatured && (
-              <span className="shrink-0 rounded-full bg-amber-100 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-amber-900">
+              <span className="rounded-full bg-orange-50 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-orange-700">
                 Destaque
               </span>
             )}
@@ -218,21 +207,56 @@ function ProductCard({
             {product.description}
           </p>
 
-          <div className="mt-auto flex items-center justify-between gap-3 pt-4">
-            <strong className="text-lg">{formatBRL(product.price)}</strong>
-            <button
-              type="button"
+          <div className="mt-auto flex items-end justify-between gap-3 pt-4">
+            <div>
+              <strong className="text-base">{formatBRL(product.price)}</strong>
+              {!product.isAvailable && (
+                <p className="mt-1 text-xs font-bold text-red-600">
+                  Indisponível
+                </p>
+              )}
+            </div>
+            <AddButton
               disabled={!product.isAvailable}
               onClick={onAdd}
-              className="grid h-10 w-10 place-items-center rounded-xl bg-rose-600 text-xl font-bold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
-              aria-label={`Adicionar ${product.name}`}
-            >
-              +
-            </button>
+              name={product.name}
+            />
           </div>
+        </div>
+
+        <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-xl bg-zinc-100 sm:h-32 sm:w-32">
+          <Image
+            src={product.imageUrl}
+            alt={product.name}
+            fill
+            className="object-cover"
+            sizes="128px"
+          />
         </div>
       </div>
     </article>
+  );
+}
+
+function AddButton({
+  disabled,
+  onClick,
+  name,
+}: {
+  disabled: boolean;
+  onClick: () => void;
+  name: string;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className="grid h-9 w-9 place-items-center rounded-full border border-orange-200 bg-white text-xl font-bold text-[#ff6500] transition hover:bg-orange-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:text-zinc-300"
+      aria-label={`Adicionar ${name}`}
+    >
+      +
+    </button>
   );
 }
 
@@ -247,26 +271,24 @@ function CartDrawer({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/50 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end bg-black/45 sm:items-stretch sm:justify-end"
       role="dialog"
       aria-modal="true"
-      aria-label="Carrinho"
+      aria-label="Seu pedido"
       onMouseDown={(event) => {
         if (event.currentTarget === event.target) onClose();
       }}
     >
-      <div className="ml-auto flex h-full w-full max-w-md flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+      <div className="flex max-h-[88vh] w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:h-full sm:max-h-none sm:max-w-md sm:rounded-none">
         <header className="flex items-center justify-between border-b border-zinc-100 p-5">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-rose-600">
-              Seu pedido
-            </p>
-            <h2 className="text-2xl font-black">Carrinho</h2>
+            <p className="text-sm font-bold text-[#ff6500]">Seu pedido</p>
+            <h2 className="text-xl font-black">Sacola</h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl bg-zinc-100 px-3 py-2 font-bold"
+            className="rounded-lg px-3 py-2 text-sm font-bold text-zinc-500 hover:bg-zinc-100"
           >
             Fechar
           </button>
@@ -276,7 +298,7 @@ function CartDrawer({
           {cart.items.map((item) => (
             <div
               key={item.productId}
-              className="flex items-center gap-3 rounded-2xl border border-zinc-100 p-3"
+              className="flex items-center gap-3 border-b border-zinc-100 pb-4 last:border-0"
             >
               <Image
                 src={item.imageUrl}
@@ -287,12 +309,14 @@ function CartDrawer({
               />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-bold">{item.name}</p>
-                <p className="text-sm text-zinc-500">{formatBRL(item.price)}</p>
+                <p className="mt-1 text-sm text-zinc-500">
+                  {formatBRL(item.price * item.quantity)}
+                </p>
                 <div className="mt-2 flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => cart.decrement(item.productId)}
-                    className="h-8 w-8 rounded-lg bg-zinc-100 font-black"
+                    className="h-8 w-8 rounded-full border border-zinc-200 font-black"
                   >
                     −
                   </button>
@@ -315,7 +339,7 @@ function CartDrawer({
                         sortOrder: 0,
                       })
                     }
-                    className="h-8 w-8 rounded-lg bg-zinc-950 font-black text-white"
+                    className="h-8 w-8 rounded-full border border-orange-200 font-black text-[#ff6500]"
                   >
                     +
                   </button>
@@ -324,7 +348,7 @@ function CartDrawer({
               <button
                 type="button"
                 onClick={() => cart.remove(item.productId)}
-                className="text-xs font-bold text-rose-600"
+                className="text-xs font-bold text-zinc-400 hover:text-red-600"
               >
                 Remover
               </button>
@@ -334,18 +358,57 @@ function CartDrawer({
 
         <footer className="border-t border-zinc-100 p-5">
           <div className="mb-4 flex items-center justify-between text-lg">
-            <span>Subtotal</span>
+            <span>Total dos itens</span>
             <strong>{formatBRL(cart.subtotal)}</strong>
           </div>
           <Link
             href="/checkout"
             onClick={onCheckout}
-            className="block rounded-2xl bg-rose-600 px-5 py-4 text-center font-black text-white hover:bg-rose-700"
+            className="block rounded-xl bg-[#ff6500] px-5 py-4 text-center font-black text-white transition hover:bg-[#df5700]"
           >
-            Continuar para o checkout
+            Continuar
           </Link>
         </footer>
       </div>
     </div>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function ClockIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
+      <path
+        d="M12 7v5l3 2"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }

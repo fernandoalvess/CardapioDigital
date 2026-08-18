@@ -1,18 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8f7f4;
-  --foreground: #18181b;
-  --brand: #e11d48;
-  --brand-dark: #be123c;
+  --background: #f7f7f7;
+  --foreground: #1b1b1b;
+  --brand: #ff6500;
+  --brand-dark: #df5700;
+  --brand-soft: #fff1e8;
   --surface: #ffffff;
-  --muted: #71717a;
-  --border: #e4e4e7;
+  --muted: #6b6b6b;
+  --border: #e8e8e8;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 html {
   scroll-behavior: smooth;
@@ -35,17 +34,17 @@ select {
 }
 
 ::selection {
-  background: #fecdd3;
-  color: #881337;
+  background: #ffd7bd;
+  color: #7a3000;
 }
 
 .container-app {
-  width: min(1180px, calc(100% - 32px));
+  width: min(1120px, calc(100% - 32px));
   margin-inline: auto;
 }
 
 .card-shadow {
-  box-shadow: 0 16px 45px rgba(24, 24, 27, 0.08);
+  box-shadow: 0 5px 24px rgba(27, 27, 27, 0.06);
 }
 
 .safe-bottom {

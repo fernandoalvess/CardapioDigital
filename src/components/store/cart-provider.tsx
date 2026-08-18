@@ -29,7 +29,7 @@ type CartContextValue = {
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
-const STORAGE_KEY = "fb-hamburgueria:v2:cart";
+const STORAGE_KEY = "fb-burguer:v2:cart";
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
@@ -38,6 +38,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (saved) setItems(JSON.parse(saved));
     } catch {
       localStorage.removeItem(STORAGE_KEY);

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { useCart } from "@/components/store/cart-provider";
@@ -8,7 +9,6 @@ import { formatBRL } from "@/lib/format";
 type CheckoutStatus =
   | { type: "idle"; message?: string }
   | { type: "loading"; message?: string }
-  | { type: "success"; message: string; orderId: string }
   | { type: "error"; message: string };
 
 export default function CheckoutPage() {
@@ -47,130 +47,127 @@ export default function CheckoutPage() {
         type: "error",
         message:
           result.error ??
-          "O backend de pedidos ainda não está conectado ao Supabase.",
+          "Não foi possível registrar a comanda. O pedido não foi encaminhado ao WhatsApp.",
+      });
+      return;
+    }
+
+    if (!result.whatsappUrl) {
+      setStatus({
+        type: "error",
+        message: "A comanda foi criada, mas o WhatsApp da loja não está configurado.",
       });
       return;
     }
 
     cart.clear();
-    setStatus({
-      type: "success",
-      message: "Pedido registrado com sucesso.",
-      orderId: result.orderId,
-    });
-  }
-
-  if (status.type === "success") {
-    return (
-      <main className="container-app grid min-h-screen place-items-center py-10">
-        <div className="card-shadow w-full max-w-lg rounded-3xl bg-white p-8 text-center">
-          <span className="text-5xl">✅</span>
-          <h1 className="mt-5 text-3xl font-black">Pedido recebido!</h1>
-          <p className="mt-3 text-zinc-500">{status.message}</p>
-          <p className="mt-4 rounded-2xl bg-zinc-100 p-3 font-mono text-sm">
-            {status.orderId}
-          </p>
-          <Link
-            href="/"
-            className="mt-6 block rounded-2xl bg-zinc-950 px-5 py-4 font-bold text-white"
-          >
-            Voltar ao cardápio
-          </Link>
-        </div>
-      </main>
-    );
+    window.location.assign(result.whatsappUrl);
   }
 
   return (
-    <main className="container-app py-8 md:py-12">
-      <Link href="/" className="text-sm font-bold text-rose-600">
-        ← Voltar ao cardápio
-      </Link>
+    <main className="min-h-screen bg-zinc-50 pb-10">
+      <header className="border-b border-zinc-200 bg-white">
+        <div className="container-app flex h-16 items-center gap-3">
+          <Link href="/" aria-label="Voltar ao cardápio" className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-100">
+            ←
+          </Link>
+          <Image src="/brand/logo.webp" alt="FB Burguer" width={38} height={38} className="h-9 w-9 rounded-lg object-cover" />
+          <strong>FB Burguer</strong>
+        </div>
+      </header>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_380px]">
-        <form onSubmit={submit} className="card-shadow rounded-3xl bg-white p-6 md:p-8">
-          <p className="text-xs font-black uppercase tracking-[0.2em] text-rose-600">
-            Finalização
-          </p>
-          <h1 className="mt-1 text-3xl font-black">Checkout</h1>
+      <div className="container-app py-7 md:py-10">
+        <div className="mb-6">
+          <p className="text-sm font-bold text-[#ff6500]">Finalizar pedido</p>
+          <h1 className="mt-1 text-2xl font-black md:text-3xl">Revise e envie pelo WhatsApp</h1>
+        </div>
 
-          <div className="mt-8 grid gap-5">
-            <Field label="Nome" name="name" autoComplete="name" required />
-            <Field label="Telefone / WhatsApp" name="phone" autoComplete="tel" required />
-            <label className="grid gap-2">
-              <span className="text-sm font-bold">Endereço de entrega</span>
-              <textarea
-                name="address"
-                required
-                rows={3}
-                className="rounded-2xl border border-zinc-200 px-4 py-3 outline-none focus:border-rose-400 focus:ring-4 focus:ring-rose-100"
-                placeholder="Rua, número, bairro e referência"
-              />
-            </label>
+        <div className="grid gap-6 lg:grid-cols-[1fr_390px]">
+          <form onSubmit={submit} className="rounded-2xl border border-zinc-200 bg-white p-5 md:p-7">
+            <h2 className="text-lg font-black">Seus dados</h2>
 
-            <label className="grid gap-2">
-              <span className="text-sm font-bold">Pagamento</span>
-              <select
-                name="paymentMethod"
-                className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 outline-none"
-                defaultValue="pix"
-              >
-                <option value="pix">Pix</option>
-                <option value="cash">Dinheiro</option>
-                <option value="card_on_delivery">Cartão na entrega</option>
-              </select>
-            </label>
+            <div className="mt-5 grid gap-5">
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Field label="Nome" name="name" autoComplete="name" required />
+                <Field label="Telefone / WhatsApp" name="phone" autoComplete="tel" required />
+              </div>
 
-            <label className="grid gap-2">
-              <span className="text-sm font-bold">Observação</span>
-              <textarea
-                name="notes"
-                rows={2}
-                className="rounded-2xl border border-zinc-200 px-4 py-3 outline-none focus:border-rose-400 focus:ring-4 focus:ring-rose-100"
-                placeholder="Ex.: sem cebola"
-              />
-            </label>
-          </div>
+              <label className="grid gap-2">
+                <span className="text-sm font-bold">Endereço de entrega</span>
+                <textarea
+                  name="address"
+                  required
+                  rows={3}
+                  className="rounded-xl border border-zinc-200 px-4 py-3 text-sm outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                  placeholder="Rua, número, bairro e ponto de referência"
+                />
+              </label>
 
-          {status.type === "error" && (
-            <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
-              {status.message}
+              <label className="grid gap-2">
+                <span className="text-sm font-bold">Como pretende pagar?</span>
+                <select
+                  name="paymentMethod"
+                  className="rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                  defaultValue="pix"
+                >
+                  <option value="pix">Pix</option>
+                  <option value="cash">Dinheiro</option>
+                  <option value="card_on_delivery">Cartão na entrega</option>
+                </select>
+              </label>
+
+              <label className="grid gap-2">
+                <span className="text-sm font-bold">Observação</span>
+                <textarea
+                  name="notes"
+                  rows={3}
+                  className="rounded-xl border border-zinc-200 px-4 py-3 text-sm outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                  placeholder="Ex.: sem cebola, troco para R$ 50, portão azul..."
+                />
+              </label>
             </div>
-          )}
 
-          <button
-            type="submit"
-            disabled={!cart.items.length || status.type === "loading"}
-            className="mt-7 w-full rounded-2xl bg-rose-600 px-5 py-4 font-black text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
-          >
-            {status.type === "loading" ? "Registrando..." : "Confirmar pedido"}
-          </button>
-        </form>
-
-        <aside className="h-fit rounded-3xl border border-zinc-200 bg-white p-6">
-          <h2 className="text-xl font-black">Resumo</h2>
-          <div className="mt-5 space-y-4">
-            {cart.items.length === 0 ? (
-              <p className="text-sm text-zinc-500">Seu carrinho está vazio.</p>
-            ) : (
-              cart.items.map((item) => (
-                <div key={item.productId} className="flex justify-between gap-4 text-sm">
-                  <span>
-                    {item.quantity}× {item.name}
-                  </span>
-                  <strong>{formatBRL(item.price * item.quantity)}</strong>
-                </div>
-              ))
+            {status.type === "error" && (
+              <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-800">
+                {status.message}
+              </div>
             )}
-          </div>
-          <div className="mt-6 flex justify-between border-t border-zinc-200 pt-5 text-lg">
-            <span>Subtotal</span>
-            <strong>{formatBRL(cart.subtotal)}</strong>
-          </div>
-          <p className="mt-2 text-xs leading-5 text-zinc-500">
-            A taxa de entrega será incorporada na próxima etapa, com zonas configuráveis pelo painel.
-          </p>
-        </aside>
+
+            <button
+              type="submit"
+              disabled={!cart.items.length || status.type === "loading"}
+              className="mt-7 w-full rounded-xl bg-[#ff6500] px-5 py-4 font-black text-white transition hover:bg-[#df5700] disabled:cursor-not-allowed disabled:bg-zinc-300"
+            >
+              {status.type === "loading" ? "Criando comanda..." : "Enviar pedido"}
+            </button>
+          </form>
+
+          <aside className="h-fit rounded-2xl border border-zinc-200 bg-white p-5 md:p-6">
+            <h2 className="text-lg font-black">Resumo do pedido</h2>
+            <div className="mt-5 space-y-4">
+              {cart.items.length === 0 ? (
+                <div>
+                  <p className="text-sm text-zinc-500">Sua sacola está vazia.</p>
+                  <Link href="/" className="mt-3 inline-block text-sm font-bold text-[#ff6500]">Voltar ao cardápio</Link>
+                </div>
+              ) : (
+                cart.items.map((item) => (
+                  <div key={item.productId} className="flex gap-3 border-b border-zinc-100 pb-4 last:border-0">
+                    <Image src={item.imageUrl} alt="" width={54} height={54} className="h-14 w-14 rounded-lg object-cover" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold">{item.quantity}× {item.name}</p>
+                      <p className="mt-1 text-sm text-zinc-500">{formatBRL(item.price * item.quantity)}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="mt-5 flex justify-between border-t border-zinc-200 pt-5 text-lg">
+              <span>Total dos itens</span>
+              <strong>{formatBRL(cart.subtotal)}</strong>
+            </div>
+          </aside>
+        </div>
       </div>
     </main>
   );
@@ -194,7 +191,7 @@ function Field({
         name={name}
         autoComplete={autoComplete}
         required={required}
-        className="rounded-2xl border border-zinc-200 px-4 py-3 outline-none focus:border-rose-400 focus:ring-4 focus:ring-rose-100"
+        className="rounded-xl border border-zinc-200 px-4 py-3 text-sm outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
       />
     </label>
   );

@@ -1,3 +1,4 @@
+import { StoreFooter } from "@/components/store/store-footer";
 import { Storefront } from "@/components/store/storefront";
 import { isStoreOpenNow } from "@/lib/business-hours";
 import { getCatalog } from "@/lib/catalog";
@@ -7,10 +8,13 @@ export default async function Home() {
   const status = isStoreOpenNow(catalog.business.timezone);
 
   return (
-    <Storefront
-      catalog={catalog}
-      open={status.isOpen}
-      hoursLabel={status.label}
-    />
+    <>
+      <Storefront
+        catalog={catalog}
+        open={status.isOpen}
+        hoursLabel={status.label}
+      />
+      <StoreFooter />
+    </>
   );
 }
