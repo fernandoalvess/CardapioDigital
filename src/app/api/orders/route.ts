@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { hasSupabaseSecret } from "@/lib/supabase/env";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { formatBRL } from "@/lib/format";
 
 const orderSchema = z.object({
   customerName: z.string().trim().min(2).max(120),
@@ -20,12 +21,18 @@ const orderSchema = z.object({
     .max(50),
 });
 
+const paymentLabels: Record<string, string> = {
+  pix: "Pix direto com a loja",
+  cash: "Dinheiro",
+  card_on_delivery: "Cartão na entrega",
+};
+
 export async function POST(request: Request) {
   if (!hasSupabaseSecret) {
     return NextResponse.json(
       {
         error:
-          "Modo de demonstração: configure NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SECRET_KEY para registrar pedidos.",
+          "A FB Burguer ainda está em modo de demonstração. Conecte o Supabase para garantir que todo pedido enviado ao WhatsApp gere uma comanda.",
       },
       { status: 503 },
     );
@@ -40,18 +47,25 @@ export async function POST(request: Request) {
   }
 
   const supabase = createAdminClient();
-  const businessSlug =
-    process.env.NEXT_PUBLIC_BUSINESS_SLUG ?? "fb-hamburgueria";
+  const businessSlug = process.env.NEXT_PUBLIC_BUSINESS_SLUG ?? "fb-burguer";
 
   const { data: business, error: businessError } = await supabase
     .from("businesses")
-    .select("id")
+    .select("id,name,whatsapp")
     .eq("slug", businessSlug)
     .eq("is_active", true)
     .single();
 
   if (businessError || !business) {
     return NextResponse.json({ error: "Loja não encontrada." }, { status: 404 });
+  }
+
+  const whatsapp = String(business.whatsapp ?? "").replace(/\D/g, "");
+  if (!whatsapp) {
+    return NextResponse.json(
+      { error: "O WhatsApp da loja ainda não está configurado." },
+      { status: 503 },
+    );
   }
 
   const requested = parsed.data.items;
@@ -110,13 +124,14 @@ export async function POST(request: Request) {
       discount,
       total,
       status: "pending",
+      whatsapp_redirected_at: new Date().toISOString(),
     })
-    .select("id")
+    .select("id,order_number")
     .single();
 
   if (orderError || !order) {
     return NextResponse.json(
-      { error: "Não foi possível criar o pedido." },
+      { error: "Não foi possível criar a comanda. O WhatsApp não foi aberto." },
       { status: 500 },
     );
   }
@@ -135,10 +150,79 @@ export async function POST(request: Request) {
   if (itemError) {
     await supabase.from("orders").delete().eq("id", order.id);
     return NextResponse.json(
-      { error: "Não foi possível salvar os itens do pedido." },
+      { error: "Não foi possível salvar os itens da comanda. O WhatsApp não foi aberto." },
       { status: 500 },
     );
   }
 
-  return NextResponse.json({ orderId: order.id }, { status: 201 });
+  const commandNumber = order.order_number ?? order.id.slice(0, 8).toUpperCase();
+  const message = buildWhatsAppMessage({
+    businessName: business.name,
+    commandNumber,
+    customerName: parsed.data.customerName,
+    phone: parsed.data.phone,
+    address: parsed.data.address,
+    paymentMethod: parsed.data.paymentMethod,
+    notes: parsed.data.notes,
+    items: pricedItems,
+    total,
+  });
+
+  return NextResponse.json(
+    {
+      orderId: order.id,
+      orderNumber: commandNumber,
+      whatsappUrl: `https://wa.me/${whatsapp}?text=${encodeURIComponent(message)}`,
+    },
+    { status: 201 },
+  );
+}
+
+function buildWhatsAppMessage({
+  businessName,
+  commandNumber,
+  customerName,
+  phone,
+  address,
+  paymentMethod,
+  notes,
+  items,
+  total,
+}: {
+  businessName: string;
+  commandNumber: string | number;
+  customerName: string;
+  phone: string;
+  address: string;
+  paymentMethod: string;
+  notes: string;
+  items: Array<{ name: string; unitPrice: number; quantity: number; total: number }>;
+  total: number;
+}) {
+  const itemLines = items
+    .map(
+      (item) =>
+        `• ${item.quantity}x ${item.name} — ${formatBRL(item.total)}`,
+    )
+    .join("\n");
+
+  return [
+    `🍔 *${businessName.toUpperCase()}*`,
+    `*COMANDA #${commandNumber}*`,
+    "",
+    `👤 *Cliente:* ${customerName}`,
+    `📱 *Telefone:* ${phone}`,
+    `📍 *Entrega:* ${address}`,
+    "",
+    "*ITENS*",
+    itemLines,
+    "",
+    `💰 *Total dos itens:* ${formatBRL(total)}`,
+    `💳 *Forma informada:* ${paymentLabels[paymentMethod] ?? paymentMethod}`,
+    notes ? `📝 *Observação:* ${notes}` : "",
+    "",
+    "Esta comanda será confirmada como venda pela administração da FB Burguer.",
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
