@@ -9,14 +9,14 @@ export const metadata: Metadata = {
     template: "%s | FB Burguer",
   },
   description:
-    "Cardápio digital da FB Burguer. Faça seu pedido de forma rápida e simples.",
+    "Cardápio digital da FB Burguer. Monte seu pedido e envie direto pelo WhatsApp.",
   openGraph: {
     type: "website",
     locale: "pt_BR",
     siteName: "FB Burguer",
     title: "FB Burguer",
     description: "Hambúrgueres, salgados, bebidas e sobremesas.",
-    images: ["/legacy/logo.webp"],
+    images: ["/brand/logo.webp"],
   },
 };
 

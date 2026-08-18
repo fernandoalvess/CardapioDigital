@@ -30,7 +30,7 @@ export async function getCatalog(): Promise<Catalog> {
 
   try {
     const supabase = await createClient();
-    const slug = process.env.NEXT_PUBLIC_BUSINESS_SLUG ?? "fb-hamburgueria";
+    const slug = process.env.NEXT_PUBLIC_BUSINESS_SLUG ?? "fb-burguer";
 
     const { data: business, error: businessError } = await supabase
       .from("businesses")

@@ -5,8 +5,8 @@ const BUSINESS_ID = "10000000-0000-4000-8000-000000000001";
 export const seedCatalog: Catalog = {
   business: {
     id: BUSINESS_ID,
-    name: "FB Hamburgueria",
-    slug: "fb-hamburgueria",
+    name: "FB Burguer",
+    slug: "fb-burguer",
     address: "Rua Fernando, 15, Centro, Ereré-CE",
     whatsapp: "5588998102411",
     timezone: "America/Fortaleza",
