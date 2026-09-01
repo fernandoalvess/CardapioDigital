@@ -6,6 +6,7 @@ import { useState, type FormEvent } from "react";
 import { useCart } from "@/components/store/cart-provider";
 import { formatBRL } from "@/lib/format";
 import { StoreFooter } from "@/components/store/store-footer";
+import { ChevronLeft } from "lucide-react";
 
 type CheckoutStatus =
   | { type: "idle"; message?: string }
@@ -72,10 +73,10 @@ export default function CheckoutPage() {
         <div className="container-app flex h-16 items-center gap-3">
           <Link
             href="/"
-            aria-label="Voltar ao cardápio"
-            className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-100"
+            aria-label="Voltar para o cardápio"
+            className="inline-flex h-5 w-5 items-center justify-center rounded-full transition hover:bg-zinc-100"
           >
-            ←
+            <ChevronLeft className="h-4 w-4" />
           </Link>
           <Image
             src="/brand/logo.webp"
@@ -90,7 +91,7 @@ export default function CheckoutPage() {
 
       <div className="container-app py-7 md:py-10">
         <div className="mb-4">
-          <h1 className="mt-1 text-2xl font-black md:text-3xl text-[#ff6500]">
+          <h1 className="mt-1 text-xl font-black md:text-xl">
             Finalizar pedido
           </h1>
         </div>
