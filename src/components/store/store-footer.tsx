@@ -6,7 +6,6 @@ export function StoreFooter() {
         <a href="https://www.instagram.com/fernaando.alves/" target="_blank">
           @fernandoalvess
         </a>. Todos os direitos reservados.
-        {/* <p>Todos os direitos reservados.</p> */}
       </div>
     </footer>
   );

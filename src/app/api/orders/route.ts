@@ -179,7 +179,6 @@ export async function POST(request: Request) {
 }
 
 function buildWhatsAppMessage({
-  businessName,
   commandNumber,
   customerName,
   phone,
@@ -207,18 +206,18 @@ function buildWhatsAppMessage({
     .join("\n");
 
   return [
-    `🍔 *${businessName.toUpperCase()}*`,
     `*COMANDA #${commandNumber}*`,
     "",
     `👤 *Cliente:* ${customerName}`,
     `📱 *Telefone:* ${phone}`,
     `📍 *Entrega:* ${address}`,
     "",
+    
     "*ITENS*",
     itemLines,
     "",
-    `💰 *Total dos itens:* ${formatBRL(total)}`,
-    `💳 *Forma informada:* ${paymentLabels[paymentMethod] ?? paymentMethod}`,
+    `💰 *Total:* ${formatBRL(total)}`,
+    `💳 *Forma de pagamento:* ${paymentLabels[paymentMethod] ?? paymentMethod}`,
     notes ? `📝 *Observação:* ${notes}` : "",
     "",
   ]

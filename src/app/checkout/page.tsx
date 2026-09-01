@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { useCart } from "@/components/store/cart-provider";
 import { formatBRL } from "@/lib/format";
+import { StoreFooter } from "@/components/store/store-footer";
 
 type CheckoutStatus =
   | { type: "idle"; message?: string }
@@ -55,7 +56,8 @@ export default function CheckoutPage() {
     if (!result.whatsappUrl) {
       setStatus({
         type: "error",
-        message: "A comanda foi criada, mas o WhatsApp da loja não está configurado.",
+        message:
+          "A comanda foi criada, mas o WhatsApp da loja não está configurado.",
       });
       return;
     }
@@ -65,31 +67,50 @@ export default function CheckoutPage() {
   }
 
   return (
-    <main className="min-h-screen bg-zinc-50 pb-10">
+    <main className="min-h-screen bg-zinc-50">
       <header className="border-b border-zinc-200 bg-white">
         <div className="container-app flex h-16 items-center gap-3">
-          <Link href="/" aria-label="Voltar ao cardápio" className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-100">
+          <Link
+            href="/"
+            aria-label="Voltar ao cardápio"
+            className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-100"
+          >
             ←
           </Link>
-          <Image src="/brand/logo.webp" alt="FB Burguer" width={38} height={38} className="h-9 w-9 rounded-lg object-cover" />
+          <Image
+            src="/brand/logo.webp"
+            alt="FB Burguer"
+            width={38}
+            height={38}
+            className="h-9 w-9 rounded-lg object-cover"
+          />
           <strong>FB Burguer</strong>
         </div>
       </header>
 
       <div className="container-app py-7 md:py-10">
-        <div className="mb-6">
-          <p className="text-sm font-bold text-[#ff6500]">Finalizar pedido</p>
-          <h1 className="mt-1 text-2xl font-black md:text-3xl">Revise e envie pelo WhatsApp</h1>
+        <div className="mb-4">
+          <h1 className="mt-1 text-2xl font-black md:text-3xl text-[#ff6500]">
+            Finalizar pedido
+          </h1>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1fr_390px]">
-          <form onSubmit={submit} className="rounded-2xl border border-zinc-200 bg-white p-5 md:p-7">
-            <h2 className="text-lg font-black">Seus dados</h2>
+          <form
+            onSubmit={submit}
+            className="rounded-2xl border border-zinc-200 bg-white p-5 md:p-7"
+          >
+            <h2 className="text-lg font-black">Informe seus dados</h2>
 
             <div className="mt-5 grid gap-5">
               <div className="grid gap-5 sm:grid-cols-2">
                 <Field label="Nome" name="name" autoComplete="name" required />
-                <Field label="Telefone / WhatsApp" name="phone" autoComplete="tel" required />
+                <Field
+                  label="Telefone / WhatsApp"
+                  name="phone"
+                  autoComplete="tel"
+                  required
+                />
               </div>
 
               <label className="grid gap-2">
@@ -104,7 +125,7 @@ export default function CheckoutPage() {
               </label>
 
               <label className="grid gap-2">
-                <span className="text-sm font-bold">Como pretende pagar?</span>
+                <span className="text-sm font-bold">Forma de pagamento</span>
                 <select
                   name="paymentMethod"
                   className="rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
@@ -138,7 +159,9 @@ export default function CheckoutPage() {
               disabled={!cart.items.length || status.type === "loading"}
               className="mt-7 w-full rounded-xl bg-[#ff6500] px-5 py-4 font-black text-white transition hover:bg-[#df5700] disabled:cursor-not-allowed disabled:bg-zinc-300"
             >
-              {status.type === "loading" ? "Criando comanda..." : "Enviar pedido"}
+              {status.type === "loading"
+                ? "Criando comanda..."
+                : "Enviar pedido"}
             </button>
           </form>
 
@@ -147,16 +170,36 @@ export default function CheckoutPage() {
             <div className="mt-5 space-y-4">
               {cart.items.length === 0 ? (
                 <div>
-                  <p className="text-sm text-zinc-500">Sua sacola está vazia.</p>
-                  <Link href="/" className="mt-3 inline-block text-sm font-bold text-[#ff6500]">Voltar ao cardápio</Link>
+                  <p className="text-sm text-zinc-500">
+                    Sua sacola está vazia.
+                  </p>
+                  <Link
+                    href="/"
+                    className="mt-3 inline-block text-sm font-bold text-[#ff6500]"
+                  >
+                    Voltar ao cardápio
+                  </Link>
                 </div>
               ) : (
                 cart.items.map((item) => (
-                  <div key={item.productId} className="flex gap-3 border-b border-zinc-100 pb-4 last:border-0">
-                    <Image src={item.imageUrl} alt="" width={54} height={54} className="h-14 w-14 rounded-lg object-cover" />
+                  <div
+                    key={item.productId}
+                    className="flex gap-3 border-b border-zinc-100 pb-4 last:border-0"
+                  >
+                    <Image
+                      src={item.imageUrl}
+                      alt=""
+                      width={54}
+                      height={54}
+                      className="h-14 w-14 rounded-lg object-cover"
+                    />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-bold">{item.quantity}× {item.name}</p>
-                      <p className="mt-1 text-sm text-zinc-500">{formatBRL(item.price * item.quantity)}</p>
+                      <p className="text-sm font-bold">
+                        {item.quantity}× {item.name}
+                      </p>
+                      <p className="mt-1 text-sm text-zinc-500">
+                        {formatBRL(item.price * item.quantity)}
+                      </p>
                     </div>
                   </div>
                 ))
@@ -169,6 +212,7 @@ export default function CheckoutPage() {
           </aside>
         </div>
       </div>
+      <StoreFooter />
     </main>
   );
 }
