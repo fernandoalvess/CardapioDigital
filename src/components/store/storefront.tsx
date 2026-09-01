@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatBRL } from "@/lib/format";
 import type { Catalog, Product } from "@/types/catalog";
 import { useCart } from "./cart-provider";
@@ -11,9 +11,15 @@ type Props = {
   catalog: Catalog;
   open: boolean;
   hoursLabel: string;
+  closedMessage: string;
 };
 
-export function Storefront({ catalog, open, hoursLabel }: Props) {
+export function Storefront({
+  catalog,
+  open,
+  hoursLabel,
+  closedMessage,
+}: Props) {
   const [query, setQuery] = useState("");
   const [cartOpen, setCartOpen] = useState(false);
   const cart = useCart();
@@ -171,13 +177,13 @@ export function Storefront({ catalog, open, hoursLabel }: Props) {
         <CartDrawer
           onClose={() => setCartOpen(false)}
           onCheckout={() => setCartOpen(false)}
+          initialOpen={open}
+          initialMessage={closedMessage}
         />
       )}
     </main>
   );
 }
-
-
 
 function ProductCard({
   product,
@@ -263,11 +269,65 @@ function AddButton({
 function CartDrawer({
   onClose,
   onCheckout,
+  initialOpen,
+  initialMessage,
 }: {
   onClose: () => void;
   onCheckout: () => void;
+  initialOpen: boolean;
+  initialMessage: string;
 }) {
   const cart = useCart();
+  const [storeStatus, setStoreStatus] = useState({
+    isOpen: initialOpen,
+    message: initialMessage,
+  });
+  const [checkingHours, setCheckingHours] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function refreshStoreStatus() {
+      try {
+        const response = await fetch("/api/store/status", {
+          cache: "no-store",
+        });
+        const result = await response.json().catch(() => null);
+
+        if (cancelled) return;
+
+        if (!response.ok || !result || typeof result.isOpen !== "boolean") {
+          setStoreStatus({
+            isOpen: false,
+            message:
+              "Não foi possível confirmar o horário da FB Burguer agora.",
+          });
+          return;
+        }
+
+        setStoreStatus({
+          isOpen: result.isOpen,
+          message: result.message ?? "Estamos fechados no momento.",
+        });
+      } catch {
+        if (!cancelled) {
+          setStoreStatus({
+            isOpen: false,
+            message:
+              "Não foi possível confirmar o horário da FB Burguer agora.",
+          });
+        }
+      } finally {
+        if (!cancelled) setCheckingHours(false);
+      }
+    }
+
+    refreshStoreStatus();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div
@@ -361,13 +421,53 @@ function CartDrawer({
             <span>Total dos itens</span>
             <strong>{formatBRL(cart.subtotal)}</strong>
           </div>
-          <Link
-            href="/checkout"
-            onClick={onCheckout}
-            className="block rounded-xl bg-[#ff6500] px-5 py-4 text-center font-black text-white transition hover:bg-[#df5700]"
-          >
-            Continuar
-          </Link>
+
+          {!checkingHours && !storeStatus.isOpen && (
+            <div className="mb-4 rounded-2xl border border-orange-200 bg-orange-50 p-4 shadow-sm">
+              <div className="flex items-start gap-3">
+
+                <div className="min-w-0">
+                  <h3 className="font-bold text-zinc-900">
+                    Loja fechada no momento
+                  </h3>
+
+
+                  <p className="mt-2 text-sm font-semibold text-[#e85b00]">
+                    {storeStatus.message.replace(
+                      /^Estamos fechados no momento\.\s*/,
+                      "",
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {checkingHours ? (
+            <button
+              type="button"
+              disabled
+              className="block w-full cursor-wait rounded-xl bg-zinc-200 px-5 py-4 text-center font-black text-zinc-500"
+            >
+              Verificando horário...
+            </button>
+          ) : storeStatus.isOpen ? (
+            <Link
+              href="/checkout"
+              onClick={onCheckout}
+              className="block rounded-xl bg-[#ff6500] px-5 py-4 text-center font-black text-white transition hover:bg-[#df5700]"
+            >
+              Finalizar pedido
+            </Link>
+          ) : (
+            <button
+              type="button"
+              disabled
+              className="block w-full cursor-not-allowed rounded-xl bg-zinc-200 px-5 py-4 text-center font-black text-zinc-500"
+            >
+              Estabelecimento fechado
+            </button>
+          )}
         </footer>
       </div>
     </div>
