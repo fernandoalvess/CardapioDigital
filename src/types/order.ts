@@ -23,6 +23,7 @@ export type AdminOrder = {
   customerPhone: string;
   address: string;
   paymentMethod: "pix" | "cash" | "card_on_delivery";
+  cashChangeFor: number | null;
   notes: string;
   adminNotes: string;
   subtotal: number;

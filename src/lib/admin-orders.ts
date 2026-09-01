@@ -18,6 +18,7 @@ type OrderRow = {
   customer_phone: string;
   address_text: string;
   payment_method: "pix" | "cash" | "card_on_delivery";
+  cash_change_for: number | string | null;
   notes: string | null;
   admin_notes: string | null;
   subtotal: number | string;
@@ -65,7 +66,7 @@ export async function listAdminOrders(limit = 100): Promise<AdminOrder[]> {
   const { data } = await supabase
     .from("orders")
     .select(
-      "id,order_number,customer_name,customer_phone,address_text,payment_method,notes,admin_notes,subtotal,delivery_fee,discount,total,status,created_at,whatsapp_redirected_at,closed_at,cancelled_at,order_items(id,product_id,product_name_snapshot,unit_price,quantity,total)",
+      "id,order_number,customer_name,customer_phone,address_text,payment_method,cash_change_for,notes,admin_notes,subtotal,delivery_fee,discount,total,status,created_at,whatsapp_redirected_at,closed_at,cancelled_at,order_items(id,product_id,product_name_snapshot,unit_price,quantity,total)",
     )
     .eq("business_id", business.id)
     .order("created_at", { ascending: false })
@@ -82,7 +83,7 @@ export async function getAdminOrder(orderId: string): Promise<AdminOrder | null>
   const { data } = await supabase
     .from("orders")
     .select(
-      "id,order_number,customer_name,customer_phone,address_text,payment_method,notes,admin_notes,subtotal,delivery_fee,discount,total,status,created_at,whatsapp_redirected_at,closed_at,cancelled_at,order_items(id,product_id,product_name_snapshot,unit_price,quantity,total)",
+      "id,order_number,customer_name,customer_phone,address_text,payment_method,cash_change_for,notes,admin_notes,subtotal,delivery_fee,discount,total,status,created_at,whatsapp_redirected_at,closed_at,cancelled_at,order_items(id,product_id,product_name_snapshot,unit_price,quantity,total)",
     )
     .eq("business_id", business.id)
     .eq("id", orderId)
@@ -136,6 +137,7 @@ function mapOrder(row: OrderRow): AdminOrder {
     customerPhone: row.customer_phone,
     address: row.address_text,
     paymentMethod: row.payment_method,
+    cashChangeFor: row.cash_change_for === null ? null : Number(row.cash_change_for),
     notes: row.notes ?? "",
     adminNotes: row.admin_notes ?? "",
     subtotal: Number(row.subtotal),
