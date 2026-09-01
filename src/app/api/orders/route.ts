@@ -1,14 +1,24 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { hasSupabaseSecret } from "@/lib/supabase/env";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { hasSupabaseSecret } from "@/lib/supabase/env";
 import { formatBRL } from "@/lib/format";
+import { getBusinessStoreStatus } from "@/lib/business-hours";
 
 const orderSchema = z.object({
   customerName: z.string().trim().min(2).max(120),
-  phone: z.string().trim().min(8).max(30),
+  phone: z
+    .string()
+    .trim()
+    .min(10)
+    .max(20)
+    .refine((value) => {
+      const digits = value.replace(/\D/g, "");
+      return digits.length === 10 || digits.length === 11;
+    }, "Telefone inválido."),
   address: z.string().trim().min(5).max(500),
   paymentMethod: z.enum(["pix", "cash", "card_on_delivery"]),
+  cashChangeFor: z.number().min(0).max(100000).nullable().optional().default(null),
   notes: z.string().trim().max(500).optional().default(""),
   items: z
     .array(
@@ -51,13 +61,34 @@ export async function POST(request: Request) {
 
   const { data: business, error: businessError } = await supabase
     .from("businesses")
-    .select("id,name,whatsapp")
+    .select("id,name,whatsapp,timezone")
     .eq("slug", businessSlug)
     .eq("is_active", true)
     .single();
 
   if (businessError || !business) {
     return NextResponse.json({ error: "Loja não encontrada." }, { status: 404 });
+  }
+
+  let storeStatus;
+  try {
+    storeStatus = await getBusinessStoreStatus(
+      supabase,
+      business.id,
+      business.timezone ?? "America/Fortaleza",
+    );
+  } catch {
+    return NextResponse.json(
+      { error: "Não foi possível confirmar o horário da FB Burguer. Tente novamente em instantes." },
+      { status: 503 },
+    );
+  }
+
+  if (!storeStatus.isOpen) {
+    return NextResponse.json(
+      { error: storeStatus.message, code: "STORE_CLOSED" },
+      { status: 409 },
+    );
   }
 
   const whatsapp = String(business.whatsapp ?? "").replace(/\D/g, "");
@@ -109,6 +140,15 @@ export async function POST(request: Request) {
   const deliveryFee = 0;
   const discount = 0;
   const total = subtotal + deliveryFee - discount;
+  const cashChangeFor =
+    parsed.data.paymentMethod === "cash" ? parsed.data.cashChangeFor : null;
+
+  if (cashChangeFor !== null && cashChangeFor !== undefined && cashChangeFor < total) {
+    return NextResponse.json(
+      { error: "O valor informado para troco deve ser igual ou maior que o total do pedido." },
+      { status: 400 },
+    );
+  }
 
   const { data: order, error: orderError } = await supabase
     .from("orders")
@@ -118,6 +158,7 @@ export async function POST(request: Request) {
       customer_phone: parsed.data.phone,
       address_text: parsed.data.address,
       payment_method: parsed.data.paymentMethod,
+      cash_change_for: cashChangeFor ?? null,
       notes: parsed.data.notes,
       subtotal,
       delivery_fee: deliveryFee,
@@ -157,12 +198,12 @@ export async function POST(request: Request) {
 
   const commandNumber = order.order_number ?? order.id.slice(0, 8).toUpperCase();
   const message = buildWhatsAppMessage({
-    businessName: business.name,
     commandNumber,
     customerName: parsed.data.customerName,
     phone: parsed.data.phone,
     address: parsed.data.address,
     paymentMethod: parsed.data.paymentMethod,
+    cashChangeFor: cashChangeFor ?? null,
     notes: parsed.data.notes,
     items: pricedItems,
     total,
@@ -184,25 +225,23 @@ function buildWhatsAppMessage({
   phone,
   address,
   paymentMethod,
+  cashChangeFor,
   notes,
   items,
   total,
 }: {
-  businessName: string;
   commandNumber: string | number;
   customerName: string;
   phone: string;
   address: string;
   paymentMethod: string;
+  cashChangeFor: number | null;
   notes: string;
   items: Array<{ name: string; unitPrice: number; quantity: number; total: number }>;
   total: number;
 }) {
   const itemLines = items
-    .map(
-      (item) =>
-        `• ${item.quantity}x ${item.name} — ${formatBRL(item.total)}`,
-    )
+    .map((item) => `• ${item.quantity}x ${item.name} — ${formatBRL(item.total)}`)
     .join("\n");
 
   return [
@@ -212,12 +251,14 @@ function buildWhatsAppMessage({
     `📱 *Telefone:* ${phone}`,
     `📍 *Entrega:* ${address}`,
     "",
-    
     "*ITENS*",
     itemLines,
     "",
     `💰 *Total:* ${formatBRL(total)}`,
     `💳 *Forma de pagamento:* ${paymentLabels[paymentMethod] ?? paymentMethod}`,
+    paymentMethod === "cash" && cashChangeFor !== null
+      ? `💵 *Troco para:* ${formatBRL(cashChangeFor)}`
+      : "",
     notes ? `📝 *Observação:* ${notes}` : "",
     "",
   ]
