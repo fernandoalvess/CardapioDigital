@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { ImageOff } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { formatBRL } from "@/lib/format";
 import type { Catalog, Product } from "@/types/catalog";
@@ -237,12 +238,12 @@ function ProductCard({
               alt={product.name}
               fill
               className="object-cover"
+              sizes="128px"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-zinc-100">
-              <span className="text-xs font-medium text-zinc-400">
-                Sem imagem
-              </span>
+            <div className="flex h-full w-full flex-col items-center justify-center border border-dashed border-zinc-200 bg-zinc-50 text-zinc-400">
+              <ImageOff className="h-5 w-5" />
+              <span className="mt-1 text-[10px] font-bold">Sem imagem</span>
             </div>
           )}
         </div>
@@ -367,13 +368,20 @@ function CartDrawer({
               key={item.productId}
               className="flex items-center gap-3 border-b border-zinc-100 pb-4 last:border-0"
             >
-              <Image
-                src={item.imageUrl}
-                alt=""
-                width={64}
-                height={64}
-                className="h-16 w-16 rounded-xl object-cover"
-              />
+              {item.imageUrl ? (
+                <Image
+                  src={item.imageUrl}
+                  alt=""
+                  width={64}
+                  height={64}
+                  className="h-16 w-16 rounded-xl object-cover"
+                />
+              ) : (
+                <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-xl border border-dashed border-zinc-200 bg-zinc-50 text-zinc-400">
+                  <ImageOff className="h-4 w-4" />
+                  <span className="mt-1 text-[9px] font-bold">Sem imagem</span>
+                </div>
+              )}
               <div className="min-w-0 flex-1">
                 <p className="truncate font-bold">{item.name}</p>
                 <p className="mt-1 text-sm text-zinc-500">
@@ -432,10 +440,12 @@ function CartDrawer({
           {!checkingHours && !storeStatus.isOpen && (
             <div className="mb-4 rounded-2xl border border-orange-200 bg-orange-50 p-4 shadow-sm">
               <div className="flex items-start gap-3">
+
                 <div className="min-w-0">
                   <h3 className="font-bold text-zinc-900">
                     Loja fechada no momento
                   </h3>
+
 
                   <p className="mt-2 text-sm font-semibold text-[#e85b00]">
                     {storeStatus.message.replace(
