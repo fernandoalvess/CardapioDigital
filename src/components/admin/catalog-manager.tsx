@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   Eye,
   EyeOff,
+  ImageOff,
   ImagePlus,
   Pencil,
   Plus,
@@ -167,13 +168,20 @@ export function CatalogManager({
               <div className="mt-5 divide-y divide-zinc-100">
                 {categoryProducts.map((product) => (
                   <article key={product.id} className="flex flex-col gap-4 py-4 first:pt-0 sm:flex-row sm:items-center">
-                    <Image
-                      src={product.imageUrl}
-                      alt={product.name}
-                      width={80}
-                      height={80}
-                      className="h-20 w-20 shrink-0 rounded-2xl bg-zinc-100 object-cover"
-                    />
+                    {product.imageUrl ? (
+                      <Image
+                        src={product.imageUrl}
+                        alt={product.name}
+                        width={80}
+                        height={80}
+                        className="h-20 w-20 shrink-0 rounded-2xl bg-zinc-100 object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-20 w-20 shrink-0 flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 text-zinc-400">
+                        <ImageOff className="h-5 w-5" />
+                        <span className="mt-1 text-[10px] font-bold">Sem imagem</span>
+                      </div>
+                    )}
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-black text-zinc-950">{product.name}</p>
@@ -313,12 +321,25 @@ function ProductDialog({ product, categories, onClose, onDone }: { product: Admi
       <form onSubmit={submit} className="grid gap-5">
         <div className="grid gap-5 md:grid-cols-[180px_1fr]">
           <div>
-            <p className="mb-2 text-sm font-bold">Imagem</p>
+            <p className="mb-2 text-sm font-bold">Imagem <span className="font-normal text-zinc-400">(opcional)</span></p>
             <label className="group relative flex aspect-square cursor-pointer items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-zinc-200 bg-zinc-50 hover:border-orange-300">
               {imageUrl ? (
-                <Image src={imageUrl} alt="Prévia do produto" fill className="object-cover" sizes="180px" />
+                <>
+                  <Image src={imageUrl} alt="Prévia do produto" fill className="object-cover" sizes="180px" />
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      setImageUrl("");
+                    }}
+                    className="absolute bottom-2 right-2 z-10 inline-flex h-8 items-center gap-1 rounded-lg bg-white/95 px-2.5 text-[11px] font-black text-red-600 shadow-sm hover:bg-white"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Remover
+                  </button>
+                </>
               ) : (
-                <div className="text-center text-zinc-400"><ImagePlus className="mx-auto h-7 w-7" /><span className="mt-2 block text-xs font-bold">Adicionar imagem</span></div>
+                <div className="text-center text-zinc-400"><ImagePlus className="mx-auto h-7 w-7" /><span className="mt-2 block text-xs font-bold">Adicionar imagem</span><span className="mt-1 block text-[10px]">ou deixe sem imagem</span></div>
               )}
               <input type="file" accept="image/jpeg,image/png,image/webp,image/avif" className="sr-only" disabled={uploading} onChange={(event) => { const file = event.target.files?.[0]; if (file) void upload(file); }} />
               {uploading && <div className="absolute inset-0 grid place-items-center bg-white/80 text-xs font-black text-[#e85b00]">Enviando...</div>}

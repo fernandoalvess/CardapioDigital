@@ -21,16 +21,11 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const context = await getAdminContext();
-  if (!context)
-    return NextResponse.json({ error: "Sem permissão." }, { status: 403 });
+  if (!context) return NextResponse.json({ error: "Sem permissão." }, { status: 403 });
 
   const { id } = await params;
   const parsed = patchSchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success)
-    return NextResponse.json(
-      { error: "Dados do produto inválidos." },
-      { status: 400 },
-    );
+  if (!parsed.success) return NextResponse.json({ error: "Dados do produto inválidos." }, { status: 400 });
 
   if (parsed.data.categoryId) {
     const { data: category } = await context.supabase
@@ -39,11 +34,7 @@ export async function PATCH(
       .eq("id", parsed.data.categoryId)
       .eq("business_id", context.business.id)
       .maybeSingle();
-    if (!category)
-      return NextResponse.json(
-        { error: "Categoria inválida." },
-        { status: 400 },
-      );
+    if (!category) return NextResponse.json({ error: "Categoria inválida." }, { status: 400 });
   }
 
   const { data: currentProduct } = await context.supabase
@@ -55,22 +46,14 @@ export async function PATCH(
 
   const updates: Record<string, unknown> = {};
   if (parsed.data.name !== undefined) updates.name = parsed.data.name;
-  if (parsed.data.description !== undefined)
-    updates.description = parsed.data.description || null;
+  if (parsed.data.description !== undefined) updates.description = parsed.data.description || null;
   if (parsed.data.price !== undefined) updates.price = parsed.data.price;
-  if (parsed.data.categoryId !== undefined)
-    updates.category_id = parsed.data.categoryId;
-  if (parsed.data.imageUrl !== undefined) {
-    updates.image_url = parsed.data.imageUrl || null;
-  }
-  if (parsed.data.isAvailable !== undefined)
-    updates.is_available = parsed.data.isAvailable;
-  if (parsed.data.isFeatured !== undefined)
-    updates.is_featured = parsed.data.isFeatured;
-  if (parsed.data.isActive !== undefined)
-    updates.is_active = parsed.data.isActive;
-  if (parsed.data.sortOrder !== undefined)
-    updates.sort_order = parsed.data.sortOrder;
+  if (parsed.data.categoryId !== undefined) updates.category_id = parsed.data.categoryId;
+  if (parsed.data.imageUrl !== undefined) updates.image_url = parsed.data.imageUrl || null;
+  if (parsed.data.isAvailable !== undefined) updates.is_available = parsed.data.isAvailable;
+  if (parsed.data.isFeatured !== undefined) updates.is_featured = parsed.data.isFeatured;
+  if (parsed.data.isActive !== undefined) updates.is_active = parsed.data.isActive;
+  if (parsed.data.sortOrder !== undefined) updates.sort_order = parsed.data.sortOrder;
   updates.updated_at = new Date().toISOString();
 
   const { error } = await context.supabase
@@ -79,23 +62,17 @@ export async function PATCH(
     .eq("id", id)
     .eq("business_id", context.business.id);
 
-  if (error)
-    return NextResponse.json(
-      { error: cleanError(error.message) },
-      { status: 400 },
-    );
+  if (error) return NextResponse.json({ error: cleanError(error.message) }, { status: 400 });
 
   if (
-    parsed.data.imageUrl &&
+    parsed.data.imageUrl !== undefined &&
     currentProduct?.image_url &&
     parsed.data.imageUrl !== currentProduct.image_url &&
     process.env.SUPABASE_SECRET_KEY
   ) {
     const oldPath = storagePathFromPublicUrl(currentProduct.image_url);
     if (oldPath) {
-      await createAdminClient()
-        .storage.from("product-images")
-        .remove([oldPath]);
+      await createAdminClient().storage.from("product-images").remove([oldPath]);
     }
   }
 
@@ -109,8 +86,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const context = await getAdminContext();
-  if (!context)
-    return NextResponse.json({ error: "Sem permissão." }, { status: 403 });
+  if (!context) return NextResponse.json({ error: "Sem permissão." }, { status: 403 });
 
   const { id } = await params;
   const { data: product } = await context.supabase
@@ -126,17 +102,11 @@ export async function DELETE(
     .eq("id", id)
     .eq("business_id", context.business.id);
 
-  if (error)
-    return NextResponse.json(
-      { error: cleanError(error.message) },
-      { status: 400 },
-    );
+  if (error) return NextResponse.json({ error: cleanError(error.message) }, { status: 400 });
 
   const storagePath = storagePathFromPublicUrl(product?.image_url ?? "");
   if (storagePath && process.env.SUPABASE_SECRET_KEY) {
-    await createAdminClient()
-      .storage.from("product-images")
-      .remove([storagePath]);
+    await createAdminClient().storage.from("product-images").remove([storagePath]);
   }
 
   revalidatePath("/");
@@ -147,9 +117,7 @@ export async function DELETE(
 function storagePathFromPublicUrl(url: string) {
   const marker = "/storage/v1/object/public/product-images/";
   const index = url.indexOf(marker);
-  return index >= 0
-    ? decodeURIComponent(url.slice(index + marker.length))
-    : null;
+  return index >= 0 ? decodeURIComponent(url.slice(index + marker.length)) : null;
 }
 
 function cleanError(message: string) {
