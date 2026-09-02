@@ -54,6 +54,7 @@ export async function getCatalog(): Promise<Catalog> {
           "id,category_id,name,slug,description,price,image_url,is_available,is_featured,sort_order",
         )
         .eq("business_id", business.id)
+        .eq("is_active", true)
         .order("sort_order"),
     ]);
 
@@ -65,7 +66,7 @@ export async function getCatalog(): Promise<Catalog> {
         slug: row.slug,
         description: row.description ?? "",
         price: Number(row.price),
-        imageUrl: row.image_url ?? "/legacy/hamb-1.webp",
+        imageUrl: row.image_url ?? "",
         isAvailable: row.is_available,
         isFeatured: row.is_featured,
         sortOrder: row.sort_order,

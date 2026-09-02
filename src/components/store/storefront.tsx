@@ -231,13 +231,20 @@ function ProductCard({
         </div>
 
         <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-xl bg-zinc-100 sm:h-32 sm:w-32">
-          <Image
-            src={product.imageUrl}
-            alt={product.name}
-            fill
-            className="object-cover"
-            sizes="128px"
-          />
+          {product.imageUrl ? (
+            <Image
+              src={product.imageUrl}
+              alt={product.name}
+              fill
+              className="object-cover"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-zinc-100">
+              <span className="text-xs font-medium text-zinc-400">
+                Sem imagem
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </article>
@@ -425,12 +432,10 @@ function CartDrawer({
           {!checkingHours && !storeStatus.isOpen && (
             <div className="mb-4 rounded-2xl border border-orange-200 bg-orange-50 p-4 shadow-sm">
               <div className="flex items-start gap-3">
-
                 <div className="min-w-0">
                   <h3 className="font-bold text-zinc-900">
                     Loja fechada no momento
                   </h3>
-
 
                   <p className="mt-2 text-sm font-semibold text-[#e85b00]">
                     {storeStatus.message.replace(

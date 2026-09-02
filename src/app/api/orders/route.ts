@@ -102,10 +102,23 @@ export async function POST(request: Request) {
   const requested = parsed.data.items;
   const ids = [...new Set(requested.map((item) => item.productId))];
 
+  const { data: activeCategories } = await supabase
+    .from("categories")
+    .select("id")
+    .eq("business_id", business.id)
+    .eq("is_active", true);
+  const activeCategoryIds = (activeCategories ?? []).map((category) => category.id);
+
+  if (activeCategoryIds.length === 0) {
+    return NextResponse.json({ error: "O cardápio está sem categorias ativas." }, { status: 409 });
+  }
+
   const { data: products, error: productsError } = await supabase
     .from("products")
-    .select("id,name,price,is_available")
+    .select("id,name,price,is_available,is_active")
     .eq("business_id", business.id)
+    .eq("is_active", true)
+    .in("category_id", activeCategoryIds)
     .in("id", ids);
 
   if (productsError || !products || products.length !== ids.length) {
