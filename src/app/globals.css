@@ -50,3 +50,13 @@ select {
 .safe-bottom {
   padding-bottom: max(16px, env(safe-area-inset-bottom));
 }
+
+
+/* Evita o zoom automático do Safari no iOS ao focar campos menores que 16px. */
+@media (max-width: 767px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
