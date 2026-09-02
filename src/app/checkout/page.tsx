@@ -56,6 +56,9 @@ export default function CheckoutPage() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    const form = new FormData(event.currentTarget);
+
     if (!cart.items.length || !paymentMethod) return;
 
     if (storeAvailability.state !== "open") {
@@ -93,7 +96,6 @@ export default function CheckoutPage() {
       return;
     }
 
-    const form = new FormData(event.currentTarget);
     const payload = {
       customerName: String(form.get("name") ?? ""),
       phone,
