@@ -3,7 +3,7 @@ import "./globals.css";
 import { CartProvider } from "@/components/store/cart-provider";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://fbhamburgueria.vercel.app"),
+  metadataBase: new URL("https://fbburguer.vercel.app"),
   title: {
     default: "FB Burguer",
     template: "%s | FB Burguer",
