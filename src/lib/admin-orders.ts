@@ -39,6 +39,18 @@ export type AdminBusiness = {
   timezone: string;
 };
 
+export type PaymentSalesSummary = {
+  method: AdminOrder["paymentMethod"];
+  count: number;
+  total: number;
+};
+
+export type ProductSalesSummary = {
+  name: string;
+  quantity: number;
+  total: number;
+};
+
 export async function getAdminBusiness(): Promise<AdminBusiness | null> {
   if (!isSupabaseConfigured) return null;
 
@@ -100,7 +112,16 @@ export function getTodaySalesMetrics(orders: AdminOrder[], timezone: string) {
       order.closedAt &&
       dateKey(new Date(order.closedAt), timezone) === today,
   );
-  const open = orders.filter((order) => order.status === "pending");
+  const open = orders.filter((order) => isOpenStatus(order.status));
+  const createdToday = orders.filter(
+    (order) => dateKey(new Date(order.createdAt), timezone) === today,
+  );
+  const cancelledToday = orders.filter(
+    (order) =>
+      order.status === "cancelled" &&
+      order.cancelledAt &&
+      dateKey(new Date(order.cancelledAt), timezone) === today,
+  );
   const revenue = closedToday.reduce((sum, order) => sum + order.total, 0);
 
   return {
@@ -108,7 +129,71 @@ export function getTodaySalesMetrics(orders: AdminOrder[], timezone: string) {
     salesCount: closedToday.length,
     revenue,
     averageTicket: closedToday.length ? revenue / closedToday.length : 0,
+    createdTodayCount: createdToday.length,
+    cancelledTodayCount: cancelledToday.length,
   };
+}
+
+export function getTodaySalesInsights(orders: AdminOrder[], timezone: string) {
+  const today = dateKey(new Date(), timezone);
+  const closedToday = orders.filter(
+    (order) =>
+      order.status === "completed" &&
+      order.closedAt &&
+      dateKey(new Date(order.closedAt), timezone) === today,
+  );
+
+  const paymentMap = new Map<AdminOrder["paymentMethod"], PaymentSalesSummary>();
+  for (const order of closedToday) {
+    const current = paymentMap.get(order.paymentMethod) ?? {
+      method: order.paymentMethod,
+      count: 0,
+      total: 0,
+    };
+    current.count += 1;
+    current.total += order.total;
+    paymentMap.set(order.paymentMethod, current);
+  }
+
+  const productMap = new Map<string, ProductSalesSummary>();
+  for (const order of closedToday) {
+    for (const item of order.items) {
+      const current = productMap.get(item.name) ?? {
+        name: item.name,
+        quantity: 0,
+        total: 0,
+      };
+      current.quantity += item.quantity;
+      current.total += item.total;
+      productMap.set(item.name, current);
+    }
+  }
+
+  return {
+    paymentSummary: Array.from(paymentMap.values()).sort(
+      (a, b) => b.total - a.total,
+    ),
+    topProducts: Array.from(productMap.values())
+      .sort((a, b) => b.quantity - a.quantity || b.total - a.total)
+      .slice(0, 5),
+    recentOpenOrders: orders
+      .filter((order) => isOpenStatus(order.status))
+      .slice(0, 5),
+  };
+}
+
+export function isOrderFromToday(
+  order: AdminOrder,
+  timezone: string,
+  field: "createdAt" | "closedAt" | "cancelledAt" = "createdAt",
+) {
+  const value = order[field];
+  if (!value) return false;
+  return dateKey(new Date(value), timezone) === dateKey(new Date(), timezone);
+}
+
+function isOpenStatus(status: OrderStatus) {
+  return status !== "completed" && status !== "cancelled";
 }
 
 function dateKey(date: Date, timezone: string) {
