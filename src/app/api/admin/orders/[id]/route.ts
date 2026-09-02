@@ -5,21 +5,15 @@ import { createClient } from "@/lib/supabase/server";
 
 const updateSchema = z.object({
   action: z.literal("update"),
-  customerName: z.string().trim().min(2).max(120),
-  customerPhone: z.string().trim().min(8).max(30),
-  address: z.string().trim().min(5).max(500),
-  paymentMethod: z.enum(["pix", "cash", "card_on_delivery"]),
-  cashChangeFor: z.number().min(0).max(100000).nullable(),
-  notes: z.string().trim().max(500),
   adminNotes: z.string().trim().max(1000),
   deliveryFee: z.number().min(0).max(10000),
   discount: z.number().min(0).max(10000),
   items: z
     .array(
       z.object({
-        id: z.string().uuid(),
+        orderItemId: z.string().uuid().nullable(),
+        productId: z.string().uuid().nullable(),
         quantity: z.number().int().min(1).max(100),
-        unitPrice: z.number().min(0).max(100000),
       }),
     )
     .min(1)
@@ -79,15 +73,8 @@ export async function PATCH(
       : NextResponse.json({ ok: true });
   }
 
-  const { error } = await supabase.rpc("update_order_comanda", {
+  const { error } = await supabase.rpc("update_order_items", {
     target_order_id: id,
-    new_customer_name: parsed.data.customerName,
-    new_customer_phone: parsed.data.customerPhone,
-    new_address_text: parsed.data.address,
-    new_payment_method: parsed.data.paymentMethod,
-    new_cash_change_for:
-      parsed.data.paymentMethod === "cash" ? parsed.data.cashChangeFor : null,
-    new_notes: parsed.data.notes,
     new_admin_notes: parsed.data.adminNotes,
     new_delivery_fee: parsed.data.deliveryFee,
     new_discount: parsed.data.discount,
