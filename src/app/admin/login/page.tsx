@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { login } from "./actions";
 
 export default async function AdminLogin({
@@ -37,12 +36,6 @@ export default async function AdminLogin({
             Acesse para acompanhar comandas, confirmar vendas e administrar o cardápio.
           </p>
 
-          {!isSupabaseConfigured && (
-            <div className="mt-5 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4 text-sm leading-6 text-amber-100">
-              O projeto está em modo demo. Configure as variáveis do Supabase para habilitar o login real.
-            </div>
-          )}
-
           {error && (
             <div className="mt-5 rounded-2xl border border-red-400/20 bg-red-400/10 p-4 text-sm text-red-100">
               {error}
@@ -50,6 +43,14 @@ export default async function AdminLogin({
           )}
 
           <form action={login} className="mt-6 grid gap-4">
+            <input
+              type="text"
+              name="website"
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              className="absolute h-px w-px overflow-hidden opacity-0 pointer-events-none"
+            />
             <label className="grid gap-2">
               <span className="text-sm font-bold">E-mail</span>
               <input

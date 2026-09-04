@@ -18,7 +18,7 @@ const links = [
   { href: "/admin/cardapio", label: "Cardápio", icon: UtensilsCrossed },
 ];
 
-export function AdminShell({ children, demo }: { children: ReactNode; demo: boolean }) {
+export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   function isActive(href: string) {
@@ -134,12 +134,6 @@ export function AdminShell({ children, demo }: { children: ReactNode; demo: bool
               })}
             </nav>
           </header>
-
-          {demo && (
-            <div className="border-b border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-900 md:px-8">
-              <strong>Modo demo:</strong> conecte o Supabase para registrar comandas, autenticar o administrador e contabilizar vendas.
-            </div>
-          )}
 
           <div className="p-4 sm:p-5 md:p-8">{children}</div>
         </div>

@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminContext } from "@/lib/admin-auth";
+import { isSameOriginRequest } from "@/lib/security";
 
 const schema = z.object({
   name: z.string().trim().min(2).max(80),
@@ -10,6 +11,7 @@ const schema = z.object({
 });
 
 export async function POST(request: Request) {
+  if (!isSameOriginRequest(request)) return NextResponse.json({ error: "Requisição não permitida." }, { status: 403 });
   const context = await getAdminContext();
   if (!context) return NextResponse.json({ error: "Sem permissão." }, { status: 403 });
 
@@ -32,7 +34,7 @@ export async function POST(request: Request) {
     .single();
 
   if (error || !data) {
-    return NextResponse.json({ error: cleanError(error?.message ?? "Não foi possível criar a categoria.") }, { status: 400 });
+    return NextResponse.json({ error: catalogCreateError(error?.message) }, { status: 400 });
   }
 
   revalidatePath("/");
@@ -66,6 +68,8 @@ function slugify(value: string) {
     .replace(/^-+|-+$/g, "");
 }
 
-function cleanError(message: string) {
-  return message.includes("duplicate") ? "Já existe uma categoria com esse nome." : message.replace(/^.*?: /, "");
+function catalogCreateError(message?: string) {
+  return message?.includes("duplicate")
+    ? "Já existe uma categoria com esse nome."
+    : "Não foi possível criar a categoria.";
 }
