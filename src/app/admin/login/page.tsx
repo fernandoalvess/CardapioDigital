@@ -11,11 +11,7 @@ export default async function AdminLogin({
 
   return (
     <main className="grid min-h-screen place-items-center bg-[#171714] px-4 py-10 text-white">
-      <div className="w-full max-w-md">
-        <Link href="/" className="text-sm font-bold text-orange-300">
-          ← Voltar ao cardápio
-        </Link>
-
+      
         <div className="mt-6 rounded-3xl border border-white/10 bg-white/5 p-7 shadow-2xl md:p-8">
           <div className="flex items-center gap-4">
             <Image
@@ -33,7 +29,8 @@ export default async function AdminLogin({
           </div>
 
           <p className="mt-5 text-sm leading-6 text-zinc-400">
-            Acesse para acompanhar comandas, confirmar vendas e administrar o cardápio.
+            Acesse para acompanhar comandas, confirmar vendas e administrar o
+            cardápio.
           </p>
 
           {error && (
@@ -74,9 +71,13 @@ export default async function AdminLogin({
             <button className="rounded-xl bg-[#ff6500] px-5 py-4 font-black hover:bg-[#df5700]">
               Entrar
             </button>
+            <div className="mt-2 text-center">
+              <Link href="/" className="text-sm font-bold text-orange-400">
+                Voltar ao cardápio
+              </Link>
+            </div>
           </form>
         </div>
-      </div>
     </main>
   );
 }
