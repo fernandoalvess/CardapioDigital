@@ -368,7 +368,7 @@ Exemplo:
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 SUPABASE_SECRET_KEY=
-NEXT_PUBLIC_BUSINESS_SLUG=fb-burguer
+NEXT_PUBLIC_BUSINESS_SLUG=
 ```
 
 > Nunca publique credenciais reais no repositório.
@@ -445,9 +445,3 @@ Este projeto demonstra experiência prática com:
 
 - GitHub: https://github.com/fernandoalvess
 - Projeto: https://github.com/fernandoalvess/CardapioDigital
-
----
-
-## 📄 Licença
-
-Projeto desenvolvido para fins de portfólio e aplicação prática de desenvolvimento web full stack.

@@ -1,21 +1,32 @@
-MIT License
+FB BURGUER - PORTFOLIO LICENSE
 
-Copyright (c) 2024 Fernando Alves
+Copyright (c) 2024-2026 Fernando Alves
+All Rights Reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This source code and associated files are made publicly available solely
+for portfolio, educational review, recruitment, and demonstration purposes.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+Permission is granted to view and inspect the source code for evaluation
+purposes.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Without prior written permission from the copyright holder, you may not:
+
+- copy or reproduce substantial portions of this project;
+- modify or create derivative works based on this project;
+- redistribute, sublicense, publish, or sell this software;
+- use this project, in whole or in part, for commercial purposes;
+- deploy or operate copies of this application as a competing or derived service;
+- remove or alter copyright, authorship, or licensing notices.
+
+You may reference this project for educational discussion, technical review,
+or recruitment purposes, provided appropriate credit is given to the author.
+
+The software is provided "AS IS", without warranty of any kind, express or
+implied. The author shall not be liable for any claim, damages, or other
+liability arising from the use of this software.
+
+For permission regarding reuse, modification, distribution, or commercial use,
+please contact the author.
+
+Author: Fernando Alves
+GitHub: https://github.com/fernandoalvess
