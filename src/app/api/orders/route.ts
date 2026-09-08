@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { hasSupabaseSecret } from "@/lib/supabase/env";
 import { formatBRL } from "@/lib/format";
 import { getBusinessStoreStatus } from "@/lib/business-hours";
+import { exceedsContentLength, getClientIp, isSameOriginRequest, rateLimit } from "@/lib/security";
 
 const orderSchema = z.object({
   customerName: z.string().trim().min(2).max(120),
@@ -20,6 +21,7 @@ const orderSchema = z.object({
   paymentMethod: z.enum(["pix", "cash", "card_on_delivery"]),
   cashChangeFor: z.number().min(0).max(100000).nullable().optional().default(null),
   notes: z.string().trim().max(500).optional().default(""),
+  website: z.string().max(0).optional().default(""),
   items: z
     .array(
       z.object({
@@ -40,19 +42,53 @@ const paymentLabels: Record<string, string> = {
 export async function POST(request: Request) {
   if (!hasSupabaseSecret) {
     return NextResponse.json(
-      {
-        error:
-          "A FB Burguer ainda está em modo de demonstração. Conecte o Supabase para garantir que todo pedido enviado ao WhatsApp gere uma comanda.",
-      },
+      { error: "Pedidos temporariamente indisponíveis. Tente novamente em instantes." },
       { status: 503 },
+    );
+  }
+
+  if (!isSameOriginRequest(request)) {
+    return NextResponse.json({ error: "Requisição não permitida." }, { status: 403 });
+  }
+
+  if (exceedsContentLength(request, 100 * 1024)) {
+    return NextResponse.json({ error: "Pedido inválido." }, { status: 413 });
+  }
+
+  const clientIp = getClientIp(request.headers);
+  const ipAllowed = await rateLimit({
+    scope: "create-order-ip",
+    identifier: clientIp,
+    limit: 10,
+    windowSeconds: 10 * 60,
+  });
+
+  if (!ipAllowed) {
+    return NextResponse.json(
+      { error: "Muitos pedidos em pouco tempo. Aguarde alguns minutos e tente novamente." },
+      { status: 429, headers: { "Retry-After": "600" } },
     );
   }
 
   const parsed = orderSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json(
-      { error: "Dados do pedido inválidos.", issues: parsed.error.flatten() },
+      { error: "Dados do pedido inválidos." },
       { status: 400 },
+    );
+  }
+
+  const phoneAllowed = await rateLimit({
+    scope: "create-order-phone",
+    identifier: parsed.data.phone.replace(/\D/g, ""),
+    limit: 5,
+    windowSeconds: 10 * 60,
+  });
+
+  if (!phoneAllowed) {
+    return NextResponse.json(
+      { error: "Muitos pedidos para este telefone. Aguarde alguns minutos e tente novamente." },
+      { status: 429, headers: { "Retry-After": "600" } },
     );
   }
 
@@ -224,7 +260,6 @@ export async function POST(request: Request) {
 
   return NextResponse.json(
     {
-      orderId: order.id,
       orderNumber: commandNumber,
       whatsappUrl: `https://wa.me/${whatsapp}?text=${encodeURIComponent(message)}`,
     },

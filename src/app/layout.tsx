@@ -10,6 +10,13 @@ export const metadata: Metadata = {
   },
   description:
     "Cardápio digital da FB Burguer. Monte seu pedido e envie direto pelo WhatsApp.",
+  alternates: {
+    canonical: "/",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
   openGraph: {
     type: "website",
     locale: "pt_BR",

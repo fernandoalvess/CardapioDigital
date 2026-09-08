@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronDown, ChevronLeft, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronUp, ImageOff } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { useCart } from "@/components/store/cart-provider";
 import { Button } from "@/components/ui/button";
@@ -103,41 +103,49 @@ export default function CheckoutPage() {
       paymentMethod,
       cashChangeFor: paymentMethod === "cash" ? parsedCashChange : null,
       notes: String(form.get("notes") ?? ""),
+      website: String(form.get("website") ?? ""),
       items: cart.items.map((item) => ({
         productId: item.productId,
         quantity: item.quantity,
       })),
     };
 
-    const response = await fetch("/api/orders", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    try {
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    const result = await response.json().catch(() => ({}));
+      const result = await response.json().catch(() => ({}));
 
-    if (!response.ok) {
+      if (!response.ok) {
+        setStatus({
+          type: "error",
+          message:
+            result.error ??
+            "Não foi possível registrar a comanda. O pedido não foi encaminhado ao WhatsApp.",
+        });
+        return;
+      }
+
+      if (!result.whatsappUrl) {
+        setStatus({
+          type: "error",
+          message:
+            "A comanda foi criada, mas o WhatsApp da loja não está configurado.",
+        });
+        return;
+      }
+
+      cart.clear();
+      window.location.assign(result.whatsappUrl);
+    } catch {
       setStatus({
         type: "error",
-        message:
-          result.error ??
-          "Não foi possível registrar a comanda. O pedido não foi encaminhado ao WhatsApp.",
+        message: "Falha de conexão. Verifique sua internet e tente novamente.",
       });
-      return;
     }
-
-    if (!result.whatsappUrl) {
-      setStatus({
-        type: "error",
-        message:
-          "A comanda foi criada, mas o WhatsApp da loja não está configurado.",
-      });
-      return;
-    }
-
-    cart.clear();
-    window.location.assign(result.whatsappUrl);
   }
 
   return (
@@ -195,6 +203,14 @@ export default function CheckoutPage() {
         <div className="grid gap-6 lg:grid-cols-[1fr_390px] lg:items-start">
           <Card>
             <form onSubmit={submit}>
+              <input
+                type="text"
+                name="website"
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                className="absolute h-px w-px overflow-hidden opacity-0 pointer-events-none"
+              />
               <CardHeader>
                 <h2 className="text-lg font-black">Dados para entrega</h2>
               </CardHeader>
@@ -333,13 +349,20 @@ export default function CheckoutPage() {
                         key={item.productId}
                         className="flex gap-3 border-b border-zinc-100 pb-4 last:border-0 last:pb-0"
                       >
-                        <Image
-                          src={item.imageUrl}
-                          alt=""
-                          width={54}
-                          height={54}
-                          className="h-14 w-14 shrink-0 rounded-xl object-cover"
-                        />
+                        {item.imageUrl ? (
+                          <Image
+                            src={item.imageUrl}
+                            alt=""
+                            width={54}
+                            height={54}
+                            className="h-14 w-14 shrink-0 rounded-xl object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl border border-dashed border-zinc-200 bg-zinc-50 text-zinc-400">
+                            <ImageOff className="h-4 w-4" />
+                            <span className="mt-1 text-[8px] font-bold">Sem imagem</span>
+                          </div>
+                        )}
                         <div className="min-w-0 flex-1">
                           <p className="line-clamp-2 text-sm font-bold">
                             {item.quantity}× {item.name}

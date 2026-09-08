@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminContext } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isSameOriginRequest } from "@/lib/security";
 
 const patchSchema = z.object({
   name: z.string().trim().min(2).max(120).optional(),
@@ -20,6 +21,7 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  if (!isSameOriginRequest(request)) return NextResponse.json({ error: "Requisição não permitida." }, { status: 403 });
   const context = await getAdminContext();
   if (!context) return NextResponse.json({ error: "Sem permissão." }, { status: 403 });
 
@@ -62,7 +64,7 @@ export async function PATCH(
     .eq("id", id)
     .eq("business_id", context.business.id);
 
-  if (error) return NextResponse.json({ error: cleanError(error.message) }, { status: 400 });
+  if (error) return NextResponse.json({ error: productMutationError(error.message) }, { status: 400 });
 
   if (
     parsed.data.imageUrl !== undefined &&
@@ -82,9 +84,10 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  if (!isSameOriginRequest(request)) return NextResponse.json({ error: "Requisição não permitida." }, { status: 403 });
   const context = await getAdminContext();
   if (!context) return NextResponse.json({ error: "Sem permissão." }, { status: 403 });
 
@@ -102,7 +105,7 @@ export async function DELETE(
     .eq("id", id)
     .eq("business_id", context.business.id);
 
-  if (error) return NextResponse.json({ error: cleanError(error.message) }, { status: 400 });
+  if (error) return NextResponse.json({ error: productMutationError(error.message) }, { status: 400 });
 
   const storagePath = storagePathFromPublicUrl(product?.image_url ?? "");
   if (storagePath && process.env.SUPABASE_SECRET_KEY) {
@@ -120,6 +123,9 @@ function storagePathFromPublicUrl(url: string) {
   return index >= 0 ? decodeURIComponent(url.slice(index + marker.length)) : null;
 }
 
-function cleanError(message: string) {
-  return message.replace(/^.*?: /, "");
+function productMutationError(message: string) {
+  if (message.includes("foreign key")) {
+    return "Este produto possui vínculos que impedem a exclusão direta.";
+  }
+  return "Não foi possível concluir a alteração do produto.";
 }

@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { login } from "./actions";
 
 export default async function AdminLogin({
@@ -12,11 +11,7 @@ export default async function AdminLogin({
 
   return (
     <main className="grid min-h-screen place-items-center bg-[#171714] px-4 py-10 text-white">
-      <div className="w-full max-w-md">
-        <Link href="/" className="text-sm font-bold text-orange-300">
-          ← Voltar ao cardápio
-        </Link>
-
+      
         <div className="mt-6 rounded-3xl border border-white/10 bg-white/5 p-7 shadow-2xl md:p-8">
           <div className="flex items-center gap-4">
             <Image
@@ -34,14 +29,9 @@ export default async function AdminLogin({
           </div>
 
           <p className="mt-5 text-sm leading-6 text-zinc-400">
-            Acesse para acompanhar comandas, confirmar vendas e administrar o cardápio.
+            Acesse para acompanhar comandas, confirmar vendas e administrar o
+            cardápio.
           </p>
-
-          {!isSupabaseConfigured && (
-            <div className="mt-5 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4 text-sm leading-6 text-amber-100">
-              O projeto está em modo demo. Configure as variáveis do Supabase para habilitar o login real.
-            </div>
-          )}
 
           {error && (
             <div className="mt-5 rounded-2xl border border-red-400/20 bg-red-400/10 p-4 text-sm text-red-100">
@@ -50,6 +40,14 @@ export default async function AdminLogin({
           )}
 
           <form action={login} className="mt-6 grid gap-4">
+            <input
+              type="text"
+              name="website"
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              className="absolute h-px w-px overflow-hidden opacity-0 pointer-events-none"
+            />
             <label className="grid gap-2">
               <span className="text-sm font-bold">E-mail</span>
               <input
@@ -73,9 +71,13 @@ export default async function AdminLogin({
             <button className="rounded-xl bg-[#ff6500] px-5 py-4 font-black hover:bg-[#df5700]">
               Entrar
             </button>
+            <div className="mt-2 text-center">
+              <Link href="/" className="text-sm font-bold text-orange-400">
+                Voltar ao cardápio
+              </Link>
+            </div>
           </form>
         </div>
-      </div>
     </main>
   );
 }

@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminContext } from "@/lib/admin-auth";
+import { isSameOriginRequest } from "@/lib/security";
 
 const patchSchema = z.object({
   name: z.string().trim().min(2).max(80).optional(),
@@ -13,6 +14,7 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  if (!isSameOriginRequest(request)) return NextResponse.json({ error: "Requisição não permitida." }, { status: 403 });
   const context = await getAdminContext();
   if (!context) return NextResponse.json({ error: "Sem permissão." }, { status: 403 });
 
@@ -34,7 +36,7 @@ export async function PATCH(
     .eq("id", id)
     .eq("business_id", context.business.id);
 
-  if (error) return NextResponse.json({ error: cleanError(error.message) }, { status: 400 });
+  if (error) return NextResponse.json({ error: categoryError(error.message) }, { status: 400 });
 
   revalidatePath("/");
   revalidatePath("/admin/cardapio");
@@ -42,9 +44,10 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  if (!isSameOriginRequest(request)) return NextResponse.json({ error: "Requisição não permitida." }, { status: 403 });
   const context = await getAdminContext();
   if (!context) return NextResponse.json({ error: "Sem permissão." }, { status: 403 });
 
@@ -55,16 +58,17 @@ export async function DELETE(
     .eq("id", id)
     .eq("business_id", context.business.id);
 
-  if (error) return NextResponse.json({ error: cleanError(error.message) }, { status: 400 });
+  if (error) return NextResponse.json({ error: categoryError(error.message) }, { status: 400 });
 
   revalidatePath("/");
   revalidatePath("/admin/cardapio");
   return NextResponse.json({ ok: true });
 }
 
-function cleanError(message: string) {
+function categoryError(message: string) {
   if (message.includes("foreign key") || message.includes("violates foreign key")) {
     return "Essa categoria ainda possui produtos. Mova ou exclua os produtos antes de removê-la.";
   }
-  return message.replace(/^.*?: /, "");
+  if (message.includes("duplicate")) return "Já existe uma categoria com esse nome.";
+  return "Não foi possível concluir a alteração da categoria.";
 }

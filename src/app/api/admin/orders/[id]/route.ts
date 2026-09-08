@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
+import { isSameOriginRequest } from "@/lib/security";
 
 const updateSchema = z.object({
   action: z.literal("update"),
@@ -30,6 +31,7 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  if (!isSameOriginRequest(request)) return NextResponse.json({ error: "Requisição não permitida." }, { status: 403 });
   if (!isSupabaseConfigured) {
     return NextResponse.json(
       { error: "Conecte o Supabase para gerenciar comandas." },
@@ -60,7 +62,7 @@ export async function PATCH(
       target_order_id: id,
     });
     return error
-      ? NextResponse.json({ error: cleanError(error.message) }, { status: 400 })
+      ? NextResponse.json({ error: orderActionError(error.message) }, { status: 400 })
       : NextResponse.json({ ok: true });
   }
 
@@ -69,7 +71,7 @@ export async function PATCH(
       target_order_id: id,
     });
     return error
-      ? NextResponse.json({ error: cleanError(error.message) }, { status: 400 })
+      ? NextResponse.json({ error: orderActionError(error.message) }, { status: 400 })
       : NextResponse.json({ ok: true });
   }
 
@@ -82,10 +84,26 @@ export async function PATCH(
   });
 
   return error
-    ? NextResponse.json({ error: cleanError(error.message) }, { status: 400 })
+    ? NextResponse.json({ error: orderActionError(error.message) }, { status: 400 })
     : NextResponse.json({ ok: true });
 }
 
-function cleanError(message: string) {
-  return message.replace(/^.*?: /, "");
+function orderActionError(message: string) {
+  const allowedMessages = [
+    "Comanda não encontrada",
+    "Sem permissão para fechar esta comanda",
+    "Sem permissão para cancelar esta comanda",
+    "Sem permissão para editar esta comanda",
+    "Comanda cancelada não pode ser fechada",
+    "Venda já confirmada. Não cancele sem reabrir a comanda.",
+    "Apenas comandas abertas podem ser editadas",
+    "Taxa e desconto não podem ser negativos",
+    "A comanda precisa ter pelo menos um item",
+    "Item da comanda não encontrado",
+    "Produto não informado",
+    "Produto indisponível ou não encontrado",
+  ];
+
+  return allowedMessages.find((allowed) => message.includes(allowed))
+    ?? "Não foi possível concluir a alteração da comanda.";
 }
