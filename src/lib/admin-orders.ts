@@ -1,5 +1,5 @@
-import { isSupabaseConfigured } from "@/lib/supabase/env";
-import { createClient } from "@/lib/supabase/server";
+import { getAdminContext } from "@/lib/admin-auth";
+import { isOpenOrderStatus } from "@/lib/order-status";
 import type { AdminOrder, AdminOrderItem, OrderStatus } from "@/types/order";
 
 type OrderItemRow = {
@@ -52,35 +52,26 @@ export type ProductSalesSummary = {
 };
 
 export async function getAdminBusiness(): Promise<AdminBusiness | null> {
-  if (!isSupabaseConfigured) return null;
+  const context = await getAdminContext();
+  if (!context) return null;
 
-  const supabase = await createClient();
-  const slug = process.env.NEXT_PUBLIC_BUSINESS_SLUG ?? "fb-burguer";
-  const { data } = await supabase
-    .from("businesses")
-    .select("id,name,timezone")
-    .eq("slug", slug)
-    .single();
-
-  if (!data) return null;
   return {
-    id: data.id,
-    name: data.name,
-    timezone: data.timezone ?? "America/Fortaleza",
+    id: context.business.id,
+    name: context.business.name,
+    timezone: context.business.timezone,
   };
 }
 
 export async function listAdminOrders(limit = 100): Promise<AdminOrder[]> {
-  const business = await getAdminBusiness();
-  if (!business) return [];
+  const context = await getAdminContext();
+  if (!context) return [];
 
-  const supabase = await createClient();
-  const { data } = await supabase
+  const { data } = await context.supabase
     .from("orders")
     .select(
       "id,order_number,customer_name,customer_phone,address_text,payment_method,cash_change_for,notes,admin_notes,subtotal,delivery_fee,discount,total,status,created_at,whatsapp_redirected_at,closed_at,cancelled_at,order_items(id,product_id,product_name_snapshot,unit_price,quantity,total)",
     )
-    .eq("business_id", business.id)
+    .eq("business_id", context.business.id)
     .order("created_at", { ascending: false })
     .limit(limit);
 
@@ -88,16 +79,15 @@ export async function listAdminOrders(limit = 100): Promise<AdminOrder[]> {
 }
 
 export async function getAdminOrder(orderId: string): Promise<AdminOrder | null> {
-  const business = await getAdminBusiness();
-  if (!business) return null;
+  const context = await getAdminContext();
+  if (!context) return null;
 
-  const supabase = await createClient();
-  const { data } = await supabase
+  const { data } = await context.supabase
     .from("orders")
     .select(
       "id,order_number,customer_name,customer_phone,address_text,payment_method,cash_change_for,notes,admin_notes,subtotal,delivery_fee,discount,total,status,created_at,whatsapp_redirected_at,closed_at,cancelled_at,order_items(id,product_id,product_name_snapshot,unit_price,quantity,total)",
     )
-    .eq("business_id", business.id)
+    .eq("business_id", context.business.id)
     .eq("id", orderId)
     .maybeSingle();
 
@@ -112,7 +102,7 @@ export function getTodaySalesMetrics(orders: AdminOrder[], timezone: string) {
       order.closedAt &&
       dateKey(new Date(order.closedAt), timezone) === today,
   );
-  const open = orders.filter((order) => isOpenStatus(order.status));
+  const open = orders.filter((order) => isOpenOrderStatus(order.status));
   const createdToday = orders.filter(
     (order) => dateKey(new Date(order.createdAt), timezone) === today,
   );
@@ -177,23 +167,9 @@ export function getTodaySalesInsights(orders: AdminOrder[], timezone: string) {
       .sort((a, b) => b.quantity - a.quantity || b.total - a.total)
       .slice(0, 5),
     recentOpenOrders: orders
-      .filter((order) => isOpenStatus(order.status))
+      .filter((order) => isOpenOrderStatus(order.status))
       .slice(0, 5),
   };
-}
-
-export function isOrderFromToday(
-  order: AdminOrder,
-  timezone: string,
-  field: "createdAt" | "closedAt" | "cancelledAt" = "createdAt",
-) {
-  const value = order[field];
-  if (!value) return false;
-  return dateKey(new Date(value), timezone) === dateKey(new Date(), timezone);
-}
-
-function isOpenStatus(status: OrderStatus) {
-  return status !== "completed" && status !== "cancelled";
 }
 
 function dateKey(date: Date, timezone: string) {

@@ -7,6 +7,8 @@ export type OrderStatus =
   | "completed"
   | "cancelled";
 
+export type PaymentMethod = "pix" | "cash" | "card_on_delivery";
+
 export type AdminOrderItem = {
   id: string;
   productId: string | null;
@@ -22,7 +24,7 @@ export type AdminOrder = {
   customerName: string;
   customerPhone: string;
   address: string;
-  paymentMethod: "pix" | "cash" | "card_on_delivery";
+  paymentMethod: PaymentMethod;
   cashChangeFor: number | null;
   notes: string;
   adminNotes: string;

@@ -1,11 +1,8 @@
-import { createClient } from "@/lib/supabase/server";
+import { cache } from "react";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { createClient } from "@/lib/supabase/server";
 
-export type AdminRole = "owner" | "manager" | "kitchen" | "delivery";
-
-export async function getAdminContext(
-  allowedRoles: AdminRole[] = ["owner", "manager"],
-) {
+export const getAdminContext = cache(async () => {
   if (!isSupabaseConfigured) return null;
 
   const supabase = await createClient();
@@ -16,8 +13,9 @@ export async function getAdminContext(
   const slug = process.env.NEXT_PUBLIC_BUSINESS_SLUG ?? "fb-burguer";
   const { data: business } = await supabase
     .from("businesses")
-    .select("id,name,slug")
+    .select("id,name,slug,timezone")
     .eq("slug", slug)
+    .eq("is_active", true)
     .single();
 
   if (!business) return null;
@@ -29,14 +27,17 @@ export async function getAdminContext(
     .eq("user_id", userId)
     .maybeSingle();
 
-  if (!membership || !allowedRoles.includes(membership.role as AdminRole)) {
+  if (membership?.role !== "owner" && membership?.role !== "manager") {
     return null;
   }
 
   return {
     supabase,
     userId,
-    business,
-    role: membership.role as AdminRole,
+    business: {
+      ...business,
+      timezone: business.timezone ?? "America/Fortaleza",
+    },
+    role: membership.role,
   };
-}
+});

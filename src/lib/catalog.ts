@@ -1,4 +1,3 @@
-import { seedCatalog } from "@/data/seed-catalog";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 import type { Catalog, Category, Product } from "@/types/catalog";
@@ -25,7 +24,7 @@ type CategoryRow = {
 
 export async function getCatalog(): Promise<Catalog> {
   if (!isSupabaseConfigured) {
-    return seedCatalog;
+    return fallbackCatalog;
   }
 
   try {
@@ -39,7 +38,7 @@ export async function getCatalog(): Promise<Catalog> {
       .eq("is_active", true)
       .single();
 
-    if (businessError || !business) return seedCatalog;
+    if (businessError || !business) return fallbackCatalog;
 
     const [{ data: categoryRows }, { data: productRows }] = await Promise.all([
       supabase
@@ -95,6 +94,18 @@ export async function getCatalog(): Promise<Catalog> {
       categories,
     };
   } catch {
-    return seedCatalog;
+    return fallbackCatalog;
   }
 }
+
+const fallbackCatalog: Catalog = {
+  business: {
+    id: "local",
+    name: "FB Burguer",
+    slug: "fb-burguer",
+    address: "",
+    whatsapp: "",
+    timezone: "America/Fortaleza",
+  },
+  categories: [],
+};
