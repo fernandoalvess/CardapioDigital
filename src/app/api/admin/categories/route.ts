@@ -1,21 +1,16 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { getAdminContext } from "@/lib/admin-auth";
 import { isSameOriginRequest } from "@/lib/security";
 
-const schema = z.object({
-  name: z.string().trim().min(2).max(80),
-  sortOrder: z.number().int().min(0).max(9999).default(0),
-  isActive: z.boolean().default(true),
-});
+import { categorySchema } from "@/lib/validation/catalog";
 
 export async function POST(request: Request) {
   if (!isSameOriginRequest(request)) return NextResponse.json({ error: "Requisição não permitida." }, { status: 403 });
   const context = await getAdminContext();
   if (!context) return NextResponse.json({ error: "Sem permissão." }, { status: 403 });
 
-  const parsed = schema.safeParse(await request.json().catch(() => null));
+  const parsed = categorySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: "Dados da categoria inválidos." }, { status: 400 });
   }

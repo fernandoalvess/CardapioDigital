@@ -1,20 +1,9 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { getAdminContext } from "@/lib/admin-auth";
 import { isSameOriginRequest } from "@/lib/security";
 
-const productSchema = z.object({
-  name: z.string().trim().min(2).max(120),
-  description: z.string().trim().max(500).default(""),
-  price: z.number().min(0).max(100000),
-  categoryId: z.string().uuid(),
-  imageUrl: z.string().trim().max(1000).default(""),
-  isAvailable: z.boolean().default(true),
-  isFeatured: z.boolean().default(false),
-  isActive: z.boolean().default(true),
-  sortOrder: z.number().int().min(0).max(9999).default(0),
-});
+import { productSchema } from "@/lib/validation/catalog";
 
 export async function POST(request: Request) {
   if (!isSameOriginRequest(request)) return NextResponse.json({ error: "Requisição não permitida." }, { status: 403 });

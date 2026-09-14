@@ -1,40 +1,15 @@
 import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/admin/admin-shell";
-import { isSupabaseConfigured } from "@/lib/supabase/env";
-import { createClient } from "@/lib/supabase/server";
+import { getAdminContext } from "@/lib/admin-auth";
 
-export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  if (!isSupabaseConfigured) {
-    redirect("/admin/login?error=Área+administrativa+temporariamente+indisponível");
-  }
+export default async function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const context = await getAdminContext();
 
-  const supabase = await createClient();
-  const { data: claimsData } = await supabase.auth.getClaims();
-  const claims = claimsData?.claims;
-
-  if (!claims?.sub) {
-    redirect("/admin/login");
-  }
-
-  const slug = process.env.NEXT_PUBLIC_BUSINESS_SLUG ?? "fb-burguer";
-  const { data: business } = await supabase
-    .from("businesses")
-    .select("id")
-    .eq("slug", slug)
-    .single();
-
-  if (!business) {
-    redirect("/admin/login?error=Área+administrativa+temporariamente+indisponível");
-  }
-
-  const { data: membership } = await supabase
-    .from("business_members")
-    .select("role")
-    .eq("business_id", business.id)
-    .eq("user_id", claims.sub)
-    .maybeSingle();
-
-  if (!membership) {
+  if (!context) {
     redirect("/admin/login?error=Usuário+sem+permissão+administrativa");
   }
 

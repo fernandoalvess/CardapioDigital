@@ -29,7 +29,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-zinc-100">
       <div className="lg:grid lg:min-h-screen lg:grid-cols-[260px_1fr]">
-        <aside className="hidden border-r border-zinc-800 bg-[#171714] text-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:p-5">
+        <aside className="hidden border-r border-zinc-800 bg-zinc-950 text-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:p-5">
           <Link href="/" className="flex items-center gap-3 rounded-xl">
             <Image
               src="/brand/logo.webp"
@@ -54,7 +54,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                   href={link.href}
                   className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold transition ${
                     active
-                      ? "bg-[#ff6500] text-white shadow-sm"
+                      ? "bg-[var(--brand)] text-white shadow-sm"
                       : "text-zinc-300 hover:bg-white/10 hover:text-white"
                   }`}
                 >
@@ -100,7 +100,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 />
                 <div>
                   <strong className="block text-sm leading-4">FB Burguer</strong>
-                  <span className="text-[11px] text-zinc-500">Administração</span>
+                  <span className="text-xs text-zinc-500">Administração</span>
                 </div>
               </Link>
               <form action="/admin/logout" method="post">
@@ -123,7 +123,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                     href={link.href}
                     className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition ${
                       active
-                        ? "bg-orange-50 text-[#e85b00]"
+                        ? "bg-orange-50 text-[var(--brand-dark)]"
                         : "text-zinc-500 hover:bg-zinc-100"
                     }`}
                   >

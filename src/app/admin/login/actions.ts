@@ -10,7 +10,6 @@ import { getClientIp, rateLimit } from "@/lib/security";
 const loginSchema = z.object({
   email: z.string().trim().email().max(254),
   password: z.string().min(1).max(256),
-  website: z.string().max(0).optional().default(""),
 });
 
 export async function login(formData: FormData) {
@@ -21,7 +20,6 @@ export async function login(formData: FormData) {
   const parsed = loginSchema.safeParse({
     email: String(formData.get("email") ?? ""),
     password: String(formData.get("password") ?? ""),
-    website: String(formData.get("website") ?? ""),
   });
 
   if (!parsed.success) {

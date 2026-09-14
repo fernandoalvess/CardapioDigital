@@ -21,10 +21,19 @@ const updateSchema = z.object({
     .max(100),
 });
 
+const orderStatusSchema = z.enum([
+  "pending",
+  "accepted",
+  "preparing",
+  "ready",
+  "out_for_delivery",
+  "completed",
+  "cancelled",
+]);
+
 const actionSchema = z.discriminatedUnion("action", [
   updateSchema,
-  z.object({ action: z.literal("close") }),
-  z.object({ action: z.literal("cancel") }),
+  z.object({ action: z.literal("status"), status: orderStatusSchema }),
 ]);
 
 export async function PATCH(
@@ -57,19 +66,12 @@ export async function PATCH(
     );
   }
 
-  if (parsed.data.action === "close") {
-    const { error } = await supabase.rpc("close_order_comanda", {
+  if (parsed.data.action === "status") {
+    const { error } = await supabase.rpc("set_order_status", {
       target_order_id: id,
+      new_status: parsed.data.status,
     });
-    return error
-      ? NextResponse.json({ error: orderActionError(error.message) }, { status: 400 })
-      : NextResponse.json({ ok: true });
-  }
 
-  if (parsed.data.action === "cancel") {
-    const { error } = await supabase.rpc("cancel_order_comanda", {
-      target_order_id: id,
-    });
     return error
       ? NextResponse.json({ error: orderActionError(error.message) }, { status: 400 })
       : NextResponse.json({ ok: true });
@@ -91,17 +93,15 @@ export async function PATCH(
 function orderActionError(message: string) {
   const allowedMessages = [
     "Comanda não encontrada",
-    "Sem permissão para fechar esta comanda",
-    "Sem permissão para cancelar esta comanda",
     "Sem permissão para editar esta comanda",
-    "Comanda cancelada não pode ser fechada",
-    "Venda já confirmada. Não cancele sem reabrir a comanda.",
-    "Apenas comandas abertas podem ser editadas",
+    "Este pedido não pode mais ter os itens alterados",
     "Taxa e desconto não podem ser negativos",
     "A comanda precisa ter pelo menos um item",
     "Item da comanda não encontrado",
     "Produto não informado",
     "Produto indisponível ou não encontrado",
+    "Sem permissão para alterar o status desta comanda",
+    "Transição de status não permitida",
   ];
 
   return allowedMessages.find((allowed) => message.includes(allowed))

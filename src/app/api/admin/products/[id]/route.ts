@@ -1,21 +1,10 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { getAdminContext } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSameOriginRequest } from "@/lib/security";
 
-const patchSchema = z.object({
-  name: z.string().trim().min(2).max(120).optional(),
-  description: z.string().trim().max(500).optional(),
-  price: z.number().min(0).max(100000).optional(),
-  categoryId: z.string().uuid().optional(),
-  imageUrl: z.string().trim().max(1000).optional(),
-  isAvailable: z.boolean().optional(),
-  isFeatured: z.boolean().optional(),
-  isActive: z.boolean().optional(),
-  sortOrder: z.number().int().min(0).max(9999).optional(),
-});
+import { productPatchSchema } from "@/lib/validation/catalog";
 
 export async function PATCH(
   request: Request,
@@ -26,7 +15,7 @@ export async function PATCH(
   if (!context) return NextResponse.json({ error: "Sem permissão." }, { status: 403 });
 
   const { id } = await params;
-  const parsed = patchSchema.safeParse(await request.json().catch(() => null));
+  const parsed = productPatchSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Dados do produto inválidos." }, { status: 400 });
 
   if (parsed.data.categoryId) {

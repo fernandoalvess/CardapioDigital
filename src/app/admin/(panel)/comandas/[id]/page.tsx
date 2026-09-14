@@ -30,7 +30,7 @@ export default async function ComandaPage({ params }: { params: Promise<{ id: st
 
       <div className="mt-5 mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.2em] text-[#ff6500]">
+          <p className="text-xs font-black uppercase tracking-[0.2em] text-[var(--brand)]">
             Comanda
           </p>
           <h1 className="mt-1 text-3xl font-black">

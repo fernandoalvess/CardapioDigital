@@ -10,7 +10,7 @@ export default async function AdminLogin({
   const { error } = await searchParams;
 
   return (
-    <main className="grid min-h-screen place-items-center bg-[#171714] px-4 py-10 text-white">
+    <main className="grid min-h-screen place-items-center bg-zinc-950 px-4 py-10 text-white">
       
         <div className="mt-6 rounded-3xl border border-white/10 bg-white/5 p-7 shadow-2xl md:p-8">
           <div className="flex items-center gap-4">
@@ -40,20 +40,12 @@ export default async function AdminLogin({
           )}
 
           <form action={login} className="mt-6 grid gap-4">
-            <input
-              type="text"
-              name="website"
-              tabIndex={-1}
-              autoComplete="off"
-              aria-hidden="true"
-              className="absolute h-px w-px overflow-hidden opacity-0 pointer-events-none"
-            />
             <label className="grid gap-2">
               <span className="text-sm font-bold">E-mail</span>
               <input
                 name="email"
                 type="email"
-                autoComplete="email"
+                autoComplete="username"
                 required
                 className="rounded-xl border border-white/10 bg-white/10 px-4 py-3 outline-none focus:border-orange-400"
               />
@@ -68,7 +60,7 @@ export default async function AdminLogin({
                 className="rounded-xl border border-white/10 bg-white/10 px-4 py-3 outline-none focus:border-orange-400"
               />
             </label>
-            <button className="rounded-xl bg-[#ff6500] px-5 py-4 font-black hover:bg-[#df5700]">
+            <button className="rounded-xl bg-[var(--brand)] px-5 py-4 font-black hover:bg-[var(--brand-dark)]">
               Entrar
             </button>
             <div className="mt-2 text-center">

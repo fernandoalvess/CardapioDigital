@@ -1,14 +1,9 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { getAdminContext } from "@/lib/admin-auth";
 import { isSameOriginRequest } from "@/lib/security";
 
-const patchSchema = z.object({
-  name: z.string().trim().min(2).max(80).optional(),
-  sortOrder: z.number().int().min(0).max(9999).optional(),
-  isActive: z.boolean().optional(),
-});
+import { categoryPatchSchema } from "@/lib/validation/catalog";
 
 export async function PATCH(
   request: Request,
@@ -19,7 +14,7 @@ export async function PATCH(
   if (!context) return NextResponse.json({ error: "Sem permissão." }, { status: 403 });
 
   const { id } = await params;
-  const parsed = patchSchema.safeParse(await request.json().catch(() => null));
+  const parsed = categoryPatchSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: "Dados da categoria inválidos." }, { status: 400 });
   }

@@ -1,10 +1,16 @@
 "use client";
 
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { ArrowRight, Minus, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { NumericFormat } from "react-number-format";
 import { useMemo, useState, type FormEvent } from "react";
-import { formatBRL } from "@/lib/format";
-import type { AdminOrder } from "@/types/order";
+import { Input } from "@/components/ui/input";
+import { formatBRL, paymentMethodLabel } from "@/lib/format";
+import {
+  nextOrderAction,
+  orderStatusView,
+} from "@/lib/order-status";
+import type { AdminOrder, OrderStatus } from "@/types/order";
 
 type ProductOption = {
   id: string;
@@ -29,7 +35,7 @@ export function OrderEditor({
   availableProducts: ProductOption[];
 }) {
   const router = useRouter();
-  const [busy, setBusy] = useState<"save" | "close" | "cancel" | null>(null);
+  const [busy, setBusy] = useState<"save" | "status" | "cancel" | null>(null);
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -48,7 +54,8 @@ export function OrderEditor({
   const [deliveryFee, setDeliveryFee] = useState(String(order.deliveryFee));
   const [discount, setDiscount] = useState(String(order.discount));
   const [adminNotes, setAdminNotes] = useState(order.adminNotes);
-  const editable = order.status === "pending";
+  const editable = !["out_for_delivery", "completed", "cancelled"].includes(order.status);
+  const nextAction = nextOrderAction(order.status);
 
   const subtotal = useMemo(
     () => items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0),
@@ -145,20 +152,21 @@ export function OrderEditor({
     router.refresh();
   }
 
-  async function runAction(action: "close" | "cancel") {
-    const question =
-      action === "close"
-        ? "Fechar esta comanda e contabilizar como venda confirmada?"
-        : "Cancelar esta comanda? Ela não será contabilizada como venda.";
-    if (!window.confirm(question)) return;
+  async function changeStatus(status: OrderStatus) {
+    if (status === "completed") {
+      const confirmed = window.confirm(
+        "Concluir esta comanda e contabilizar a venda?",
+      );
+      if (!confirmed) return;
+    }
 
-    setBusy(action);
+    setBusy("status");
     setMessage(null);
 
     const response = await fetch(`/api/admin/orders/${order.id}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ action }),
+      body: JSON.stringify({ action: "status", status }),
     });
     const result = await response.json().catch(() => ({}));
     setBusy(null);
@@ -166,7 +174,35 @@ export function OrderEditor({
     if (!response.ok) {
       setMessage({
         type: "error",
-        text: result.error ?? "Não foi possível atualizar a comanda.",
+        text: result.error ?? "Não foi possível atualizar a etapa do pedido.",
+      });
+      return;
+    }
+
+    router.push("/admin/comandas");
+    router.refresh();
+  }
+
+  async function cancelOrder() {
+    if (!window.confirm("Cancelar esta comanda? Ela não será contabilizada como venda.")) {
+      return;
+    }
+
+    setBusy("cancel");
+    setMessage(null);
+
+    const response = await fetch(`/api/admin/orders/${order.id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: "status", status: "cancelled" }),
+    });
+    const result = await response.json().catch(() => ({}));
+    setBusy(null);
+
+    if (!response.ok) {
+      setMessage({
+        type: "error",
+        text: result.error ?? "Não foi possível cancelar a comanda.",
       });
       return;
     }
@@ -195,7 +231,7 @@ export function OrderEditor({
             <ReadOnlyInfo label="Endereço" value={order.address} multiline />
           </div>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <ReadOnlyInfo label="Forma de pagamento" value={paymentLabel(order.paymentMethod)} />
+            <ReadOnlyInfo label="Forma de pagamento" value={paymentMethodLabel(order.paymentMethod)} />
             {order.paymentMethod === "cash" && order.cashChangeFor !== null ? (
               <ReadOnlyInfo label="Troco para" value={formatBRL(order.cashChangeFor)} />
             ) : (
@@ -244,7 +280,7 @@ export function OrderEditor({
                 type="button"
                 onClick={addProduct}
                 disabled={!selectedProductId}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#ff6500] px-4 text-sm font-black text-white transition hover:bg-[#e85b00] disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--brand)] px-4 text-sm font-black text-white transition hover:bg-[var(--brand-dark)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Plus className="h-4 w-4" />
                 Adicionar item
@@ -372,26 +408,31 @@ export function OrderEditor({
           </div>
         )}
 
-        {editable && (
+        {order.status !== "completed" && order.status !== "cancelled" && (
           <div className="grid gap-3">
-            <button
-              type="submit"
-              disabled={Boolean(busy) || items.length === 0}
-              className="rounded-xl border border-zinc-300 bg-white px-5 py-3.5 font-black text-zinc-800 hover:bg-zinc-50 disabled:opacity-50"
-            >
-              {busy === "save" ? "Salvando..." : "Salvar alterações do pedido"}
-            </button>
+            {editable && (
+              <button
+                type="submit"
+                disabled={Boolean(busy) || items.length === 0}
+                className="rounded-xl border border-zinc-300 bg-white px-5 py-3.5 font-black text-zinc-800 hover:bg-zinc-50 disabled:opacity-50"
+              >
+                {busy === "save" ? "Salvando..." : "Salvar alterações do pedido"}
+              </button>
+            )}
+            {nextAction && (
+              <button
+                type="button"
+                onClick={() => changeStatus(nextAction.status)}
+                disabled={Boolean(busy)}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--brand)] px-5 py-3.5 font-black text-white hover:bg-[var(--brand-dark)] disabled:opacity-50"
+              >
+                <ArrowRight className="h-4 w-4" />
+                {busy === "status" ? "Atualizando..." : nextAction.label}
+              </button>
+            )}
             <button
               type="button"
-              onClick={() => runAction("close")}
-              disabled={Boolean(busy)}
-              className="rounded-xl bg-emerald-600 px-5 py-3.5 font-black text-white hover:bg-emerald-700 disabled:opacity-50"
-            >
-              {busy === "close" ? "Fechando..." : "Fechar comanda e confirmar venda"}
-            </button>
-            <button
-              type="button"
-              onClick={() => runAction("cancel")}
+              onClick={cancelOrder}
               disabled={Boolean(busy)}
               className="rounded-xl px-5 py-3 text-sm font-bold text-red-600 hover:bg-red-50 disabled:opacity-50"
             >
@@ -437,14 +478,17 @@ function NumberField({
   return (
     <label className="grid gap-2">
       <span className="text-sm font-bold">{label}</span>
-      <input
-        type="number"
-        step="0.01"
-        min="0"
+      <NumericFormat
+        customInput={Input}
+        decimalSeparator=","
+        thousandSeparator="."
+        decimalScale={2}
+        allowNegative={false}
+        prefix="R$ "
         value={value}
-        onChange={(event) => onChange(event.target.value)}
+        valueIsNumericString
+        onValueChange={({ value: numericValue }) => onChange(numericValue)}
         disabled={disabled}
-        className="rounded-xl border border-zinc-200 px-3 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100 disabled:bg-zinc-50"
       />
     </label>
   );
@@ -460,31 +504,13 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 }
 
 function StatusBadge({ status }: { status: AdminOrder["status"] }) {
-  if (status === "completed") {
-    return (
-      <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700">
-        Venda confirmada
-      </span>
-    );
-  }
-  if (status === "cancelled") {
-    return (
-      <span className="rounded-full bg-zinc-200 px-3 py-1 text-xs font-black text-zinc-600">
-        Cancelada
-      </span>
-    );
-  }
+  const view = orderStatusView[status];
+
   return (
-    <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-black text-orange-700">
-      Comanda aberta
+    <span className={`rounded-full px-3 py-1 text-xs font-black ${view.className}`}>
+      {view.label}
     </span>
   );
-}
-
-function paymentLabel(method: AdminOrder["paymentMethod"]) {
-  if (method === "pix") return "Pix direto com a loja";
-  if (method === "cash") return "Dinheiro";
-  return "Cartão na entrega";
 }
 
 function parseNumber(value: string) {
