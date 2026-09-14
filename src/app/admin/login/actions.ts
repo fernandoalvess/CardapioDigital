@@ -2,28 +2,34 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { z } from "zod";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 import { getClientIp, rateLimit } from "@/lib/security";
+import { loginSchema, type LoginFormValues } from "@/lib/validation/auth";
 
-const loginSchema = z.object({
-  email: z.string().trim().email().max(254),
-  password: z.string().min(1).max(256),
-});
+export type LoginActionResult = {
+  error?: string;
+};
 
-export async function login(formData: FormData) {
+export async function login(
+  input: FormData | LoginFormValues,
+): Promise<LoginActionResult> {
   if (!isSupabaseConfigured) {
-    redirect("/admin/login?error=Área+administrativa+temporariamente+indisponível");
+    return { error: "Área administrativa temporariamente indisponível." };
   }
 
-  const parsed = loginSchema.safeParse({
-    email: String(formData.get("email") ?? ""),
-    password: String(formData.get("password") ?? ""),
-  });
+  const raw =
+    input instanceof FormData
+      ? {
+          email: String(input.get("email") ?? ""),
+          password: String(input.get("password") ?? ""),
+        }
+      : input;
+
+  const parsed = loginSchema.safeParse(raw);
 
   if (!parsed.success) {
-    redirect("/admin/login?error=Email+ou+senha+inválidos");
+    return { error: "E-mail ou senha inválidos." };
   }
 
   const requestHeaders = await headers();
@@ -44,7 +50,9 @@ export async function login(formData: FormData) {
   });
 
   if (!ipAllowed || !accountAllowed) {
-    redirect("/admin/login?error=Muitas+tentativas.+Aguarde+alguns+minutos+e+tente+novamente");
+    return {
+      error: "Muitas tentativas. Aguarde alguns minutos e tente novamente.",
+    };
   }
 
   const supabase = await createClient();
@@ -54,7 +62,7 @@ export async function login(formData: FormData) {
   });
 
   if (error) {
-    redirect("/admin/login?error=Email+ou+senha+inválidos");
+    return { error: "E-mail ou senha inválidos." };
   }
 
   redirect("/admin");
