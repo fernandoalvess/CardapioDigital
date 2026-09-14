@@ -2,11 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ImageOff } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { Clock3, ImageOff, Search } from "lucide-react";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
+import { useStoreStatus } from "@/hooks/use-store-status";
 import { formatBRL } from "@/lib/format";
 import type { Catalog, Product } from "@/types/catalog";
-import { useCart } from "./cart-provider";
+import { useCart } from "@/stores/cart-store";
 
 type Props = {
   catalog: Catalog;
@@ -78,7 +80,7 @@ export function Storefront({
               </p>
               <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-zinc-600">
                 <span className="inline-flex items-center gap-1.5 ">
-                  <ClockIcon /> {hoursLabel}
+                  <Clock3 className="h-4 w-4" /> {hoursLabel}
                 </span>
               </div>
             </div>
@@ -90,7 +92,7 @@ export function Storefront({
         <div className="container-app py-3">
           <label className="relative block">
             <span className="pointer-events-none absolute inset-y-0 left-4 grid place-items-center text-zinc-400">
-              <SearchIcon />
+              <Search className="h-[18px] w-[18px]" />
             </span>
             <span className="sr-only">Buscar no cardápio</span>
             <input
@@ -148,7 +150,10 @@ export function Storefront({
                     <ProductCard
                       key={product.id}
                       product={product}
-                      onAdd={() => cart.add(product)}
+                      onAdd={() => {
+                        cart.add(product);
+                        toast.success(`${product.name} adicionado ao pedido.`);
+                      }}
                     />
                   ))}
                 </div>
@@ -163,7 +168,7 @@ export function Storefront({
           <button
             type="button"
             onClick={() => setCartOpen(true)}
-            className="mx-auto flex w-full max-w-2xl items-center justify-between rounded-xl bg-[#ff6500] px-5 py-4 text-left font-black text-white shadow-lg transition hover:bg-[#df5700]"
+            className="mx-auto flex w-full max-w-2xl items-center justify-between rounded-xl bg-[var(--brand)] px-5 py-4 text-left font-black text-white shadow-lg transition hover:bg-[var(--brand-dark)]"
           >
             <span>
               Ver pedido · {cart.itemCount}{" "}
@@ -266,7 +271,7 @@ function AddButton({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className="grid h-9 w-9 place-items-center rounded-full border border-orange-200 bg-white text-xl font-bold text-[#ff6500] transition hover:bg-orange-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:text-zinc-300"
+      className="grid h-9 w-9 place-items-center rounded-full border border-orange-200 bg-white text-xl font-bold text-[var(--brand)] transition hover:bg-orange-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:text-zinc-300"
       aria-label={`Adicionar ${name}`}
     >
       +
@@ -286,56 +291,25 @@ function CartDrawer({
   initialMessage: string;
 }) {
   const cart = useCart();
-  const [storeStatus, setStoreStatus] = useState({
+  const { data, isFetching, isError, error } = useStoreStatus({
     isOpen: initialOpen,
+    label: "",
     message: initialMessage,
   });
-  const [checkingHours, setCheckingHours] = useState(true);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function refreshStoreStatus() {
-      try {
-        const response = await fetch("/api/store/status", {
-          cache: "no-store",
-        });
-        const result = await response.json().catch(() => null);
-
-        if (cancelled) return;
-
-        if (!response.ok || !result || typeof result.isOpen !== "boolean") {
-          setStoreStatus({
-            isOpen: false,
-            message:
-              "Não foi possível confirmar o horário da FB Burguer agora.",
-          });
-          return;
-        }
-
-        setStoreStatus({
-          isOpen: result.isOpen,
-          message: result.message ?? "Estamos fechados no momento.",
-        });
-      } catch {
-        if (!cancelled) {
-          setStoreStatus({
-            isOpen: false,
-            message:
-              "Não foi possível confirmar o horário da FB Burguer agora.",
-          });
-        }
-      } finally {
-        if (!cancelled) setCheckingHours(false);
+  const checkingHours = isFetching;
+  const storeStatus = isError
+    ? {
+        isOpen: false,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível confirmar o horário da FB Burguer agora.",
       }
-    }
-
-    refreshStoreStatus();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    : {
+        isOpen: data?.isOpen ?? initialOpen,
+        message: data?.message ?? initialMessage,
+      };
 
   return (
     <div
@@ -350,7 +324,7 @@ function CartDrawer({
       <div className="flex max-h-[88vh] w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:h-full sm:max-h-none sm:max-w-md sm:rounded-none">
         <header className="flex items-center justify-between border-b border-zinc-100 p-5">
           <div>
-            <p className="text-sm font-bold text-[#ff6500]">Seu pedido</p>
+            <p className="text-sm font-bold text-[var(--brand)]">Seu pedido</p>
             <h2 className="text-xl font-black">Sacola</h2>
           </div>
           <button
@@ -403,18 +377,12 @@ function CartDrawer({
                     onClick={() =>
                       cart.add({
                         id: item.productId,
-                        categoryId: "",
                         name: item.name,
-                        slug: "",
-                        description: "",
                         price: item.price,
                         imageUrl: item.imageUrl,
-                        isAvailable: true,
-                        isFeatured: false,
-                        sortOrder: 0,
                       })
                     }
-                    className="h-8 w-8 rounded-full border border-orange-200 font-black text-[#ff6500]"
+                    className="h-8 w-8 rounded-full border border-orange-200 font-black text-[var(--brand)]"
                   >
                     +
                   </button>
@@ -447,7 +415,7 @@ function CartDrawer({
                   </h3>
 
 
-                  <p className="mt-2 text-sm font-semibold text-[#e85b00]">
+                  <p className="mt-2 text-sm font-semibold text-[var(--brand-dark)]">
                     {storeStatus.message.replace(
                       /^Estamos fechados no momento\.\s*/,
                       "",
@@ -470,7 +438,7 @@ function CartDrawer({
             <Link
               href="/checkout"
               onClick={onCheckout}
-              className="block rounded-xl bg-[#ff6500] px-5 py-4 text-center font-black text-white transition hover:bg-[#df5700]"
+              className="block rounded-xl bg-[var(--brand)] px-5 py-4 text-center font-black text-white transition hover:bg-[var(--brand-dark)]"
             >
               Finalizar pedido
             </Link>
@@ -486,44 +454,5 @@ function CartDrawer({
         </footer>
       </div>
     </div>
-  );
-}
-
-function SearchIcon() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function ClockIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
-      <path
-        d="M12 7v5l3 2"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
   );
 }

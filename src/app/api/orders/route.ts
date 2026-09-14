@@ -1,43 +1,13 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hasSupabaseSecret } from "@/lib/supabase/env";
-import { formatBRL } from "@/lib/format";
+import { formatBRL, paymentMethodLabel } from "@/lib/format";
 import { getBusinessStoreStatus } from "@/lib/business-hours";
 import { exceedsContentLength, getClientIp, isSameOriginRequest, rateLimit } from "@/lib/security";
+import type { PaymentMethod } from "@/types/order";
 
-const orderSchema = z.object({
-  customerName: z.string().trim().min(2).max(120),
-  phone: z
-    .string()
-    .trim()
-    .min(10)
-    .max(20)
-    .refine((value) => {
-      const digits = value.replace(/\D/g, "");
-      return digits.length === 10 || digits.length === 11;
-    }, "Telefone inválido."),
-  address: z.string().trim().min(5).max(500),
-  paymentMethod: z.enum(["pix", "cash", "card_on_delivery"]),
-  cashChangeFor: z.number().min(0).max(100000).nullable().optional().default(null),
-  notes: z.string().trim().max(500).optional().default(""),
-  website: z.string().max(0).optional().default(""),
-  items: z
-    .array(
-      z.object({
-        productId: z.string().uuid(),
-        quantity: z.number().int().min(1).max(20),
-      }),
-    )
-    .min(1)
-    .max(50),
-});
+import { orderRequestSchema } from "@/lib/validation/checkout";
 
-const paymentLabels: Record<string, string> = {
-  pix: "Pix",
-  cash: "Dinheiro",
-  card_on_delivery: "Cartão na entrega",
-};
 
 export async function POST(request: Request) {
   if (!hasSupabaseSecret) {
@@ -70,7 +40,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const parsed = orderSchema.safeParse(await request.json().catch(() => null));
+  const parsed = orderRequestSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json(
       { error: "Dados do pedido inválidos." },
@@ -282,7 +252,7 @@ function buildWhatsAppMessage({
   customerName: string;
   phone: string;
   address: string;
-  paymentMethod: string;
+  paymentMethod: PaymentMethod;
   cashChangeFor: number | null;
   notes: string;
   items: Array<{ name: string; unitPrice: number; quantity: number; total: number }>;
@@ -303,7 +273,7 @@ function buildWhatsAppMessage({
     itemLines,
     "",
     `💰 *Total:* ${formatBRL(total)}`,
-    `💳 *Forma de pagamento:* ${paymentLabels[paymentMethod] ?? paymentMethod}`,
+    `💳 *Forma de pagamento:* ${paymentMethodLabel(paymentMethod)}`,
     paymentMethod === "cash" && cashChangeFor !== null
       ? `💵 *Troco para:* ${formatBRL(cashChangeFor)}`
       : "",

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { CartProvider } from "@/components/store/cart-provider";
+import { AppProviders } from "@/components/providers/app-providers";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://fbburguer.vercel.app"),
@@ -33,9 +33,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" data-scroll-behavior="smooth">
       <body>
-        <CartProvider>{children}</CartProvider>
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );

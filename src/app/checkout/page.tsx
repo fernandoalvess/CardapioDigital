@@ -1,109 +1,135 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronDown, ChevronLeft, ChevronUp, ImageOff } from "lucide-react";
-import { useEffect, useState, type FormEvent } from "react";
-import { useCart } from "@/components/store/cart-provider";
+import { Controller, useForm, useWatch } from "react-hook-form";
+import { NumericFormat, PatternFormat } from "react-number-format";
+import { useState } from "react";
+import { useCart } from "@/stores/cart-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
+import { useStoreStatus } from "@/hooks/use-store-status";
 import { formatBRL } from "@/lib/format";
-
-type CheckoutStatus =
-  | { type: "idle"; message?: string }
-  | { type: "loading"; message?: string }
-  | { type: "error"; message: string };
-
-type PaymentMethod = "pix" | "cash" | "card_on_delivery";
-
-type StoreAvailability = {
-  state: "checking" | "open" | "closed" | "error";
-  message: string;
-};
+import {
+  checkoutFormSchema,
+  type CheckoutFormValues,
+} from "@/lib/validation/checkout";
 
 export default function CheckoutPage() {
   const cart = useCart();
-  const [status, setStatus] = useState<CheckoutStatus>({ type: "idle" });
-  const [phone, setPhone] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | "">("");
-  const [cashChangeFor, setCashChangeFor] = useState("");
+  const [serverError, setServerError] = useState("");
   const [showAllItems, setShowAllItems] = useState(false);
-  const [storeAvailability, setStoreAvailability] = useState<StoreAvailability>({
-    state: "checking",
-    message: "Verificando o horário de funcionamento...",
+  const {
+    data: storeData,
+    error: storeError,
+    isPending: checkingStore,
+    refetch: refetchStoreStatus,
+  } = useStoreStatus();
+
+  const {
+    register,
+    control,
+    handleSubmit,
+    setError,
+    clearErrors,
+    formState: { errors, isSubmitting },
+  } = useForm<CheckoutFormValues>({
+    resolver: zodResolver(checkoutFormSchema),
+    defaultValues: {
+      customerName: "",
+      phone: "",
+      address: "",
+      cashChangeFor: "",
+      notes: "",
+      website: "",
+    },
   });
 
-  useEffect(() => {
-    let cancelled = false;
+  const paymentMethod = useWatch({ control, name: "paymentMethod" });
 
-    async function loadStoreAvailability() {
-      const result = await fetchStoreAvailability();
-      if (!cancelled) setStoreAvailability(result);
-    }
-
-    loadStoreAvailability();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const storeAvailability = checkingStore
+    ? {
+        state: "checking" as const,
+        message: "Verificando o horário de funcionamento...",
+      }
+    : storeError
+      ? {
+          state: "error" as const,
+          message:
+            storeError instanceof Error
+              ? storeError.message
+              : "Não foi possível confirmar o horário da FB Burguer agora.",
+        }
+      : {
+          state: storeData?.isOpen ? ("open" as const) : ("closed" as const),
+          message:
+            storeData?.message ??
+            "Não foi possível confirmar o horário da FB Burguer agora.",
+        };
 
   const visibleItems = showAllItems ? cart.items : cart.items.slice(0, 5);
   const hiddenItemsCount = Math.max(0, cart.items.length - 5);
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function submit(values: CheckoutFormValues) {
+    setServerError("");
+    clearErrors("cashChangeFor");
 
-    const form = new FormData(event.currentTarget);
-
-    if (!cart.items.length || !paymentMethod) return;
+    if (!cart.items.length) return;
 
     if (storeAvailability.state !== "open") {
-      setStatus({
-        type: "error",
-        message: storeAvailability.message || "A FB Burguer está fechada no momento.",
-      });
+      setServerError(
+        storeAvailability.message || "A FB Burguer está fechada no momento.",
+      );
       return;
     }
 
-    setStatus({ type: "loading" });
-
-    // Revalida imediatamente antes de criar a comanda. A API de pedidos
-    // também faz a mesma validação de forma definitiva no servidor.
-    const latestAvailability = await fetchStoreAvailability();
-    setStoreAvailability(latestAvailability);
-    if (latestAvailability.state !== "open") {
-      setStatus({
-        type: "error",
-        message: latestAvailability.message,
-      });
+    const latestResult = await refetchStoreStatus();
+    const latestAvailability = latestResult.data;
+    if (!latestAvailability?.isOpen) {
+      setServerError(
+        latestAvailability?.message ??
+          (latestResult.error instanceof Error
+            ? latestResult.error.message
+            : "Não foi possível confirmar o horário da FB Burguer agora."),
+      );
       return;
     }
 
-    const parsedCashChange = parseMoneyInput(cashChangeFor);
+    const parsedCashChange =
+      values.paymentMethod === "cash" && values.cashChangeFor
+        ? Number(values.cashChangeFor)
+        : null;
+
     if (
-      paymentMethod === "cash" &&
+      values.paymentMethod === "cash" &&
       parsedCashChange !== null &&
+      Number.isFinite(parsedCashChange) &&
       parsedCashChange < cart.subtotal
     ) {
-      setStatus({
-        type: "error",
-        message: "O valor informado para troco deve ser igual ou maior que o total do pedido.",
+      setError("cashChangeFor", {
+        type: "validate",
+        message:
+          "O valor informado para troco deve ser igual ou maior que o total do pedido.",
       });
       return;
     }
 
     const payload = {
-      customerName: String(form.get("name") ?? ""),
-      phone,
-      address: String(form.get("address") ?? ""),
-      paymentMethod,
-      cashChangeFor: paymentMethod === "cash" ? parsedCashChange : null,
-      notes: String(form.get("notes") ?? ""),
-      website: String(form.get("website") ?? ""),
+      customerName: values.customerName,
+      phone: values.phone,
+      address: values.address,
+      paymentMethod: values.paymentMethod,
+      cashChangeFor:
+        values.paymentMethod === "cash" && Number.isFinite(parsedCashChange)
+          ? parsedCashChange
+          : null,
+      notes: values.notes,
+      website: values.website,
       items: cart.items.map((item) => ({
         productId: item.productId,
         quantity: item.quantity,
@@ -120,31 +146,24 @@ export default function CheckoutPage() {
       const result = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        setStatus({
-          type: "error",
-          message:
-            result.error ??
+        setServerError(
+          result.error ??
             "Não foi possível registrar a comanda. O pedido não foi encaminhado ao WhatsApp.",
-        });
+        );
         return;
       }
 
       if (!result.whatsappUrl) {
-        setStatus({
-          type: "error",
-          message:
-            "A comanda foi criada, mas o WhatsApp da loja não está configurado.",
-        });
+        setServerError(
+          "A comanda foi criada, mas o WhatsApp da loja não está configurado.",
+        );
         return;
       }
 
       cart.clear();
       window.location.assign(result.whatsappUrl);
     } catch {
-      setStatus({
-        type: "error",
-        message: "Falha de conexão. Verifique sua internet e tente novamente.",
-      });
+      setServerError("Falha de conexão. Verifique sua internet e tente novamente.");
     }
   }
 
@@ -178,7 +197,6 @@ export default function CheckoutPage() {
           </p>
         </div>
 
-
         {storeAvailability.state !== "open" && (
           <div
             className={`mb-5 rounded-2xl border p-4 text-sm leading-6 ${
@@ -202,14 +220,14 @@ export default function CheckoutPage() {
 
         <div className="grid gap-6 lg:grid-cols-[1fr_390px] lg:items-start">
           <Card>
-            <form onSubmit={submit}>
+            <form onSubmit={handleSubmit(submit)} noValidate>
               <input
                 type="text"
-                name="website"
                 tabIndex={-1}
                 autoComplete="off"
                 aria-hidden="true"
                 className="absolute h-px w-px overflow-hidden opacity-0 pointer-events-none"
+                {...register("website")}
               />
               <CardHeader>
                 <h2 className="text-lg font-black">Dados para entrega</h2>
@@ -218,46 +236,67 @@ export default function CheckoutPage() {
               <CardContent className="pt-5">
                 <div className="grid gap-5">
                   <div className="grid gap-5 sm:grid-cols-2">
-                    <Field label="Nome" name="name" autoComplete="name" required />
+                    <label className="grid gap-2">
+                      <span className="text-sm font-bold">Nome</span>
+                      <Input
+                        autoComplete="name"
+                        aria-invalid={Boolean(errors.customerName)}
+                        {...register("customerName")}
+                      />
+                      <FieldError message={errors.customerName?.message} />
+                    </label>
 
                     <label className="grid gap-2">
                       <span className="text-sm font-bold">Telefone / WhatsApp</span>
-                      <Input
+                      <Controller
+                        control={control}
                         name="phone"
-                        type="tel"
-                        inputMode="tel"
-                        autoComplete="tel"
-                        placeholder="(88) 99874-5423"
-                        value={phone}
-                        onChange={(event) => setPhone(formatPhoneBR(event.target.value))}
-                        maxLength={15}
-                        required
+                        render={({ field }) => {
+                          const digits = field.value.replace(/\D/g, "");
+                          return (
+                            <PatternFormat
+                              customInput={Input}
+                              format={
+                                digits.length <= 10
+                                  ? "(##) ####-####"
+                                  : "(##) #####-####"
+                              }
+                              inputMode="tel"
+                              autoComplete="tel"
+                              placeholder="(88) 99874-5423"
+                              value={field.value}
+                              onValueChange={({ formattedValue }) =>
+                                field.onChange(formattedValue)
+                              }
+                              onBlur={field.onBlur}
+                              getInputRef={field.ref}
+                              aria-invalid={Boolean(errors.phone)}
+                            />
+                          );
+                        }}
                       />
+                      <FieldError message={errors.phone?.message} />
                     </label>
                   </div>
 
                   <label className="grid gap-2">
                     <span className="text-sm font-bold">Endereço de entrega</span>
                     <Textarea
-                      name="address"
-                      required
                       rows={3}
                       placeholder="Rua, número, bairro e ponto de referência"
+                      aria-invalid={Boolean(errors.address)}
+                      {...register("address")}
                     />
+                    <FieldError message={errors.address?.message} />
                   </label>
 
                   <div className="grid gap-5 sm:grid-cols-2">
                     <label className="grid gap-2">
                       <span className="text-sm font-bold">Forma de pagamento</span>
                       <NativeSelect
-                        name="paymentMethod"
-                        value={paymentMethod}
-                        onChange={(event) => {
-                          const next = event.target.value as PaymentMethod | "";
-                          setPaymentMethod(next);
-                          if (next !== "cash") setCashChangeFor("");
-                        }}
-                        required
+                        defaultValue=""
+                        aria-invalid={Boolean(errors.paymentMethod)}
+                        {...register("paymentMethod")}
                       >
                         <option value="" disabled>
                           Selecionar
@@ -266,21 +305,38 @@ export default function CheckoutPage() {
                         <option value="cash">Dinheiro</option>
                         <option value="card_on_delivery">Cartão na entrega</option>
                       </NativeSelect>
+                      <FieldError message={errors.paymentMethod?.message} />
                     </label>
 
                     {paymentMethod === "cash" && (
                       <label className="grid gap-2">
                         <span className="text-sm font-bold">Troco para quanto?</span>
-                        <Input
+                        <Controller
+                          control={control}
                           name="cashChangeFor"
-                          inputMode="decimal"
-                          placeholder="Ex.: 50,00"
-                          value={cashChangeFor}
-                          onChange={(event) => setCashChangeFor(sanitizeMoneyInput(event.target.value))}
+                          render={({ field }) => (
+                            <NumericFormat
+                              customInput={Input}
+                              inputMode="decimal"
+                              placeholder="Ex.: 50,00"
+                              decimalSeparator=","
+                              thousandSeparator="."
+                              decimalScale={2}
+                              allowNegative={false}
+                              prefix="R$ "
+                              value={field.value}
+                              valueIsNumericString
+                              onValueChange={({ value }) => field.onChange(value)}
+                              onBlur={field.onBlur}
+                              getInputRef={field.ref}
+                              aria-invalid={Boolean(errors.cashChangeFor)}
+                            />
+                          )}
                         />
                         <span className="text-xs text-zinc-500">
                           Deixe em branco se não precisar de troco.
                         </span>
+                        <FieldError message={errors.cashChangeFor?.message} />
                       </label>
                     )}
                   </div>
@@ -288,16 +344,18 @@ export default function CheckoutPage() {
                   <label className="grid gap-2">
                     <span className="text-sm font-bold">Observação</span>
                     <Textarea
-                      name="notes"
                       rows={3}
                       placeholder="Ex.: sem cebola, portão azul..."
+                      aria-invalid={Boolean(errors.notes)}
+                      {...register("notes")}
                     />
+                    <FieldError message={errors.notes?.message} />
                   </label>
                 </div>
 
-                {status.type === "error" && (
+                {serverError && (
                   <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-800">
-                    {status.message}
+                    {serverError}
                   </div>
                 )}
 
@@ -305,13 +363,12 @@ export default function CheckoutPage() {
                   type="submit"
                   disabled={
                     !cart.items.length ||
-                    !paymentMethod ||
-                    status.type === "loading" ||
+                    isSubmitting ||
                     storeAvailability.state !== "open"
                   }
                   className="mt-7 min-h-14 w-full text-base font-black"
                 >
-                  {status.type === "loading"
+                  {isSubmitting
                     ? "Criando comanda..."
                     : storeAvailability.state === "checking"
                       ? "Verificando horário..."
@@ -337,7 +394,7 @@ export default function CheckoutPage() {
               {cart.items.length === 0 ? (
                 <div>
                   <p className="text-sm text-zinc-500">Sua sacola está vazia.</p>
-                  <Link href="/" className="mt-3 inline-block text-sm font-bold text-[#ff6500]">
+                  <Link href="/" className="mt-3 inline-block text-sm font-bold text-[var(--brand)]">
                     Voltar ao cardápio
                   </Link>
                 </div>
@@ -360,7 +417,7 @@ export default function CheckoutPage() {
                         ) : (
                           <div className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl border border-dashed border-zinc-200 bg-zinc-50 text-zinc-400">
                             <ImageOff className="h-4 w-4" />
-                            <span className="mt-1 text-[8px] font-bold">Sem imagem</span>
+                            <span className="mt-1 text-xs font-bold">Sem imagem</span>
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
@@ -381,7 +438,7 @@ export default function CheckoutPage() {
                       variant="ghost"
                       aria-expanded={showAllItems}
                       onClick={() => setShowAllItems((current) => !current)}
-                      className="mt-3 w-full text-[#ff6500] hover:bg-orange-50 hover:text-[#df5700]"
+                      className="mt-3 w-full text-[var(--brand)] hover:bg-orange-50 hover:text-[var(--brand-dark)]"
                     >
                       {showAllItems ? (
                         <>
@@ -409,72 +466,7 @@ export default function CheckoutPage() {
   );
 }
 
-async function fetchStoreAvailability(): Promise<StoreAvailability> {
-  try {
-    const response = await fetch("/api/store/status", { cache: "no-store" });
-    const result = await response.json().catch(() => null);
-
-    if (!response.ok || !result || typeof result.isOpen !== "boolean") {
-      return {
-        state: "error",
-        message: "Não foi possível confirmar o horário da FB Burguer agora. Tente novamente em instantes.",
-      };
-    }
-
-    return {
-      state: result.isOpen ? "open" : "closed",
-      message: result.message ?? (result.isOpen ? "Estamos aceitando pedidos." : "Estamos fechados no momento."),
-    };
-  } catch {
-    return {
-      state: "error",
-      message: "Não foi possível confirmar o horário da FB Burguer agora. Tente novamente em instantes.",
-    };
-  }
-}
-
-function Field({
-  label,
-  name,
-  autoComplete,
-  required,
-}: {
-  label: string;
-  name: string;
-  autoComplete?: string;
-  required?: boolean;
-}) {
-  return (
-    <label className="grid gap-2">
-      <span className="text-sm font-bold">{label}</span>
-      <Input name={name} autoComplete={autoComplete} required={required} />
-    </label>
-  );
-}
-
-function formatPhoneBR(value: string) {
-  const digits = value.replace(/\D/g, "").slice(0, 11);
-  if (!digits) return "";
-  if (digits.length <= 2) return `(${digits}`;
-
-  const ddd = digits.slice(0, 2);
-  const number = digits.slice(2);
-  if (number.length <= 4) return `(${ddd}) ${number}`;
-
-  const firstBlockSize = number.length === 9 ? 5 : 4;
-  return `(${ddd}) ${number.slice(0, firstBlockSize)}-${number.slice(firstBlockSize)}`;
-}
-
-function sanitizeMoneyInput(value: string) {
-  const cleaned = value.replace(/[^\d,.]/g, "").replace(/\./g, ",");
-  const [integer = "", ...decimalParts] = cleaned.split(",");
-  const decimal = decimalParts.join("").slice(0, 2);
-  return decimalParts.length ? `${integer},${decimal}` : integer;
-}
-
-function parseMoneyInput(value: string) {
-  const normalized = value.trim().replace(",", ".");
-  if (!normalized) return null;
-  const amount = Number(normalized);
-  return Number.isFinite(amount) && amount >= 0 ? amount : null;
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
+  return <span className="text-xs font-medium text-red-600">{message}</span>;
 }
