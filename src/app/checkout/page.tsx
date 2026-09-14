@@ -247,7 +247,7 @@ export default function CheckoutPage() {
                     </label>
 
                     <label className="grid gap-2">
-                      <span className="text-sm font-bold">Telefone / WhatsApp</span>
+                      <span className="text-sm font-bold">WhatsApp</span>
                       <Controller
                         control={control}
                         name="phone"

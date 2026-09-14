@@ -27,6 +27,16 @@ export function Storefront({
   const [cartOpen, setCartOpen] = useState(false);
   const cart = useCart();
 
+  const [prevItemCount, setPrevItemCount] = useState(cart.itemCount);
+  if (cart.itemCount !== prevItemCount) {
+    setPrevItemCount(cart.itemCount);
+    if (cart.itemCount === 0 && cartOpen) {
+      setCartOpen(false);
+    }
+  }
+
+  const isCartOpen = cartOpen && cart.itemCount > 0;
+
   const normalized = query.trim().toLocaleLowerCase("pt-BR");
 
   const categories = useMemo(
@@ -179,7 +189,7 @@ export function Storefront({
         </div>
       )}
 
-      {cartOpen && (
+      {isCartOpen && (
         <CartDrawer
           onClose={() => setCartOpen(false)}
           onCheckout={() => setCartOpen(false)}
@@ -297,6 +307,22 @@ function CartDrawer({
     message: initialMessage,
   });
 
+  function handleDecrement(productId: string, currentQuantity: number) {
+    if (cart.items.length === 1 && currentQuantity <= 1) {
+      onClose();
+      toast.info("Sua sacola está vazia.");
+    }
+    cart.decrement(productId);
+  }
+
+  function handleRemove(productId: string) {
+    if (cart.items.length <= 1) {
+      onClose();
+      toast.info("Sua sacola está vazia.");
+    }
+    cart.remove(productId);
+  }
+
   const checkingHours = isFetching;
   const storeStatus = isError
     ? {
@@ -364,7 +390,7 @@ function CartDrawer({
                 <div className="mt-2 flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => cart.decrement(item.productId)}
+                    onClick={() => handleDecrement(item.productId, item.quantity)}
                     className="h-8 w-8 rounded-full border border-zinc-200 font-black"
                   >
                     −
@@ -390,7 +416,7 @@ function CartDrawer({
               </div>
               <button
                 type="button"
-                onClick={() => cart.remove(item.productId)}
+                onClick={() => handleRemove(item.productId)}
                 className="text-xs font-bold text-zinc-400 hover:text-red-600"
               >
                 Remover
@@ -404,27 +430,6 @@ function CartDrawer({
             <span>Total dos itens</span>
             <strong>{formatBRL(cart.subtotal)}</strong>
           </div>
-
-          {!checkingHours && !storeStatus.isOpen && (
-            <div className="mb-4 rounded-2xl border border-orange-200 bg-orange-50 p-4 shadow-sm">
-              <div className="flex items-start gap-3">
-
-                <div className="min-w-0">
-                  <h3 className="font-bold text-zinc-900">
-                    Loja fechada no momento
-                  </h3>
-
-
-                  <p className="mt-2 text-sm font-semibold text-[var(--brand-dark)]">
-                    {storeStatus.message.replace(
-                      /^Estamos fechados no momento\.\s*/,
-                      "",
-                    )}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
 
           {checkingHours ? (
             <button
