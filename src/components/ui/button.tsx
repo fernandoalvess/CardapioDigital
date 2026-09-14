@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes } from "react";
+import { cn } from "@/lib/utils";
 
 type ButtonVariant = "default" | "outline" | "ghost";
 
@@ -8,14 +9,14 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const variants: Record<ButtonVariant, string> = {
   default:
-    "bg-[#ff6500] text-white hover:bg-[#df5700] shadow-sm disabled:bg-zinc-300",
+    "bg-[var(--brand)] text-white shadow-sm hover:bg-[var(--brand-dark)] disabled:bg-zinc-300",
   outline:
     "border border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-50 disabled:text-zinc-400",
   ghost: "bg-transparent text-zinc-700 hover:bg-zinc-100",
 };
 
 export function Button({
-  className = "",
+  className,
   variant = "default",
   type = "button",
   ...props
@@ -23,7 +24,11 @@ export function Button({
   return (
     <button
       type={type}
-      className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-100 disabled:cursor-not-allowed disabled:opacity-70 ${variants[variant]} ${className}`}
+      className={cn(
+        "inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-100 disabled:cursor-not-allowed disabled:opacity-70",
+        variants[variant],
+        className,
+      )}
       {...props}
     />
   );
