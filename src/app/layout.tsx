@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AppProviders } from "@/components/providers/app-providers";
 
@@ -10,6 +10,15 @@ export const metadata: Metadata = {
   },
   description:
     "Cardápio digital da FB Burguer. Monte seu pedido e envie direto pelo WhatsApp.",
+  applicationName: "FB Burguer",
+  appleWebApp: {
+    capable: true,
+    title: "FB Burguer",
+    statusBarStyle: "default",
+  },
+  formatDetection: {
+    telephone: false,
+  },
   alternates: {
     canonical: "/",
   },
@@ -25,6 +34,13 @@ export const metadata: Metadata = {
     description: "Hambúrgueres, salgados, bebidas e sobremesas.",
     images: ["/brand/logo.webp"],
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#ffffff",
+  colorScheme: "light",
 };
 
 export default function RootLayout({
