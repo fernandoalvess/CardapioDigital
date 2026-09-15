@@ -27,8 +27,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-100">
-      <div className="lg:grid lg:min-h-screen lg:grid-cols-[260px_1fr]">
+    <div className="min-h-dvh bg-zinc-100">
+      <div className="lg:grid lg:min-h-dvh lg:grid-cols-[260px_1fr]">
         <aside className="hidden border-r border-zinc-800 bg-zinc-950 text-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:p-5">
           <Link href="/" className="flex items-center gap-3 rounded-xl">
             <Image

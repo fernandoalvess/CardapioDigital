@@ -56,7 +56,7 @@ export function Storefront({
   );
 
   return (
-    <main className="min-h-screen pb-2">
+    <main className="min-h-dvh pb-2">
       <section className="border-b border-zinc-200 bg-white">
         <div className="container-app py-7 md:py-9">
           <div className="flex items-start gap-4 md:gap-6">
@@ -347,7 +347,7 @@ function CartDrawer({
         if (event.currentTarget === event.target) onClose();
       }}
     >
-      <div className="flex max-h-[88vh] w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:h-full sm:max-h-none sm:max-w-md sm:rounded-none">
+      <div className="flex max-h-[88dvh] w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:h-full sm:max-h-none sm:max-w-md sm:rounded-none">
         <header className="flex items-center justify-between border-b border-zinc-100 p-5">
           <div>
             <p className="text-sm font-bold text-[var(--brand)]">Seu pedido</p>
@@ -356,7 +356,7 @@ function CartDrawer({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg px-3 py-2 text-sm font-bold text-zinc-500 hover:bg-zinc-100"
+            className="rounded-lg px-3 py-2 text-sm font-bold text-red-600 hover:bg-zinc-100"
           >
             Fechar
           </button>

@@ -9,7 +9,7 @@ export default async function AdminLogin({
   const { error } = await searchParams;
 
   return (
-    <main className="grid min-h-screen place-items-center bg-zinc-950 px-4 py-10 text-white">
+    <main className="grid min-h-dvh place-items-center bg-zinc-950 px-4 py-10 text-white">
       <div className="w-full max-w-md">
         <div className="rounded-3xl border border-white/10 bg-white/5 p-7 shadow-2xl md:p-8">
           <div className="flex items-center gap-4">
