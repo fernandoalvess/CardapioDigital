@@ -19,6 +19,7 @@ import {
   checkoutFormSchema,
   type CheckoutFormValues,
 } from "@/lib/validation/checkout";
+import { StoreFooter } from "@/components/store/store-footer";
 
 export default function CheckoutPage() {
   const cart = useCart();
@@ -81,7 +82,9 @@ export default function CheckoutPage() {
 
     if (!cart.items.length) return;
 
-    if (storeAvailability.state !== "open") {
+    if (storeAvailability.state === "checking") return;
+
+    if (storeAvailability.state === "closed") {
       setServerError(
         storeAvailability.message || "A FB Burguer está fechada no momento.",
       );
@@ -163,12 +166,14 @@ export default function CheckoutPage() {
       cart.clear();
       window.location.assign(result.whatsappUrl);
     } catch {
-      setServerError("Falha de conexão. Verifique sua internet e tente novamente.");
+      setServerError(
+        "Falha de conexão. Verifique sua internet e tente novamente.",
+      );
     }
   }
 
   return (
-    <main className="min-h-screen bg-zinc-50">
+    <main className="min-h-dvh bg-zinc-50">
       <header className="border-b border-zinc-200 bg-white">
         <div className="container-app flex h-16 items-center gap-3">
           <Link
@@ -191,29 +196,17 @@ export default function CheckoutPage() {
 
       <div className="container-app py-7 md:py-10">
         <div className="mb-5">
-          <h1 className="text-2xl font-black tracking-tight">Finalizar pedido</h1>
+          <h1 className="text-2xl font-black tracking-tight">
+            Finalizar pedido
+          </h1>
           <p className="mt-1 text-sm text-zinc-500">
             Revise sua sacola e informe os dados para enviar o pedido.
           </p>
         </div>
 
-        {storeAvailability.state !== "open" && (
-          <div
-            className={`mb-5 rounded-2xl border p-4 text-sm leading-6 ${
-              storeAvailability.state === "checking"
-                ? "border-zinc-200 bg-white text-zinc-600"
-                : storeAvailability.state === "closed"
-                  ? "border-amber-200 bg-amber-50 text-amber-900"
-                  : "border-red-200 bg-red-50 text-red-800"
-            }`}
-          >
-            <strong className="block">
-              {storeAvailability.state === "checking"
-                ? "Verificando horário"
-                : storeAvailability.state === "closed"
-                  ? "Pedidos indisponíveis agora"
-                  : "Não foi possível confirmar o horário"}
-            </strong>
+        {storeAvailability.state === "closed" && (
+          <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+            <strong className="block">Pedidos indisponíveis agora</strong>
             <span>{storeAvailability.message}</span>
           </div>
         )}
@@ -240,6 +233,7 @@ export default function CheckoutPage() {
                       <span className="text-sm font-bold">Nome</span>
                       <Input
                         autoComplete="name"
+                        placeholder="Nome completo"
                         aria-invalid={Boolean(errors.customerName)}
                         {...register("customerName")}
                       />
@@ -263,7 +257,7 @@ export default function CheckoutPage() {
                               }
                               inputMode="tel"
                               autoComplete="tel"
-                              placeholder="(88) 99874-5423"
+                              placeholder="(85) 91234-5678"
                               value={field.value}
                               onValueChange={({ formattedValue }) =>
                                 field.onChange(formattedValue)
@@ -280,7 +274,9 @@ export default function CheckoutPage() {
                   </div>
 
                   <label className="grid gap-2">
-                    <span className="text-sm font-bold">Endereço de entrega</span>
+                    <span className="text-sm font-bold">
+                      Endereço de entrega
+                    </span>
                     <Textarea
                       rows={3}
                       placeholder="Rua, número, bairro e ponto de referência"
@@ -292,7 +288,9 @@ export default function CheckoutPage() {
 
                   <div className="grid gap-5 sm:grid-cols-2">
                     <label className="grid gap-2">
-                      <span className="text-sm font-bold">Forma de pagamento</span>
+                      <span className="text-sm font-bold">
+                        Forma de pagamento
+                      </span>
                       <NativeSelect
                         defaultValue=""
                         aria-invalid={Boolean(errors.paymentMethod)}
@@ -303,14 +301,18 @@ export default function CheckoutPage() {
                         </option>
                         <option value="pix">Pix</option>
                         <option value="cash">Dinheiro</option>
-                        <option value="card_on_delivery">Cartão na entrega</option>
+                        <option value="card_on_delivery">
+                          Cartão na entrega
+                        </option>
                       </NativeSelect>
                       <FieldError message={errors.paymentMethod?.message} />
                     </label>
 
                     {paymentMethod === "cash" && (
                       <label className="grid gap-2">
-                        <span className="text-sm font-bold">Troco para quanto?</span>
+                        <span className="text-sm font-bold">
+                          Troco para quanto?
+                        </span>
                         <Controller
                           control={control}
                           name="cashChangeFor"
@@ -326,7 +328,9 @@ export default function CheckoutPage() {
                               prefix="R$ "
                               value={field.value}
                               valueIsNumericString
-                              onValueChange={({ value }) => field.onChange(value)}
+                              onValueChange={({ value }) =>
+                                field.onChange(value)
+                              }
                               onBlur={field.onBlur}
                               getInputRef={field.ref}
                               aria-invalid={Boolean(errors.cashChangeFor)}
@@ -364,17 +368,16 @@ export default function CheckoutPage() {
                   disabled={
                     !cart.items.length ||
                     isSubmitting ||
-                    storeAvailability.state !== "open"
+                    storeAvailability.state === "checking" ||
+                    storeAvailability.state === "closed"
                   }
                   className="mt-7 min-h-14 w-full text-base font-black"
                 >
                   {isSubmitting
                     ? "Criando comanda..."
-                    : storeAvailability.state === "checking"
-                      ? "Verificando horário..."
-                      : storeAvailability.state !== "open"
-                        ? "Estabelecimento fechado"
-                        : "Enviar pedido"}
+                    : storeAvailability.state === "closed"
+                      ? "Estabelecimento fechado"
+                      : "Enviar pedido"}
                 </Button>
               </CardContent>
             </form>
@@ -385,7 +388,8 @@ export default function CheckoutPage() {
               <h2 className="text-lg font-black">Resumo do pedido</h2>
               {cart.items.length > 0 && (
                 <p className="mt-1 text-sm text-zinc-500">
-                  {cart.itemCount} {cart.itemCount === 1 ? "item" : "itens"} na sacola
+                  {cart.itemCount} {cart.itemCount === 1 ? "item" : "itens"} na
+                  sacola
                 </p>
               )}
             </CardHeader>
@@ -393,8 +397,13 @@ export default function CheckoutPage() {
             <CardContent className="pt-5">
               {cart.items.length === 0 ? (
                 <div>
-                  <p className="text-sm text-zinc-500">Sua sacola está vazia.</p>
-                  <Link href="/" className="mt-3 inline-block text-sm font-bold text-[var(--brand)]">
+                  <p className="text-sm text-zinc-500">
+                    Sua sacola está vazia.
+                  </p>
+                  <Link
+                    href="/"
+                    className="mt-3 inline-block text-sm font-bold text-(--brand)"
+                  >
                     Voltar ao cardápio
                   </Link>
                 </div>
@@ -417,7 +426,9 @@ export default function CheckoutPage() {
                         ) : (
                           <div className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl border border-dashed border-zinc-200 bg-zinc-50 text-zinc-400">
                             <ImageOff className="h-4 w-4" />
-                            <span className="mt-1 text-xs font-bold">Sem imagem</span>
+                            <span className="mt-1 text-xs font-bold">
+                              Sem imagem
+                            </span>
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
@@ -438,7 +449,7 @@ export default function CheckoutPage() {
                       variant="ghost"
                       aria-expanded={showAllItems}
                       onClick={() => setShowAllItems((current) => !current)}
-                      className="mt-3 w-full text-[var(--brand)] hover:bg-orange-50 hover:text-[var(--brand-dark)]"
+                      className="mt-3 w-full text-(--brand) hover:bg-orange-50 hover:text-(--brand-dark)"
                     >
                       {showAllItems ? (
                         <>
@@ -446,7 +457,8 @@ export default function CheckoutPage() {
                         </>
                       ) : (
                         <>
-                          Ver mais ({hiddenItemsCount}) <ChevronDown className="h-4 w-4" />
+                          Ver mais ({hiddenItemsCount}){" "}
+                          <ChevronDown className="h-4 w-4" />
                         </>
                       )}
                     </Button>
@@ -462,6 +474,9 @@ export default function CheckoutPage() {
           </Card>
         </div>
       </div>
+      <footer>
+        <StoreFooter />
+      </footer>
     </main>
   );
 }
