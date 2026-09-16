@@ -251,9 +251,9 @@ export default function CheckoutPage() {
                             <PatternFormat
                               customInput={Input}
                               format={
-                                digits.length <= 10
-                                  ? "(##) ####-####"
-                                  : "(##) #####-####"
+                                digits.length <= 11
+                                  ? "(##) #####-####"
+                                  : "(##) ####-####"
                               }
                               inputMode="tel"
                               autoComplete="tel"
